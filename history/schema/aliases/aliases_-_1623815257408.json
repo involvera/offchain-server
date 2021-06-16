@@ -1,0 +1,7 @@
+{
+    "id": "t.increments('id').primary()",
+    "public_key_hashed": "t.string('public_key_hashed', 40).unique().notNullable()",
+    "created_at": "t.dateTime('created_at').defaultTo(knex.raw('now()'))",
+    "pp": "t.string('pp', 255)",
+    "username": "t.string('username', 16).unique().notNullable()"
+}

@@ -1,0 +1,7 @@
+{
+    "id": "t.increments('id').primary()",
+    "address": "t.string('address', 40).unique().notNullable()",
+    "created_at": "t.dateTime('created_at').defaultTo(knex.raw('now()'))",
+    "pp": "t.text('pp', 'mediumtext')",
+    "username": "t.string('username', 16).unique().notNullable()"
+}
