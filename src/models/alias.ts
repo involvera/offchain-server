@@ -4,10 +4,10 @@ export class AliasModel extends Model {
 
     static schema = Joi.object({
         id: Joi.number().autoIncrement().primaryKey(),
-        public_key_hashed: Joi.string().hex().length(40).max(40).unique().required(),
+        public_key_hashed: Joi.string().hex().length(40).max(40).unique().required().group(['author']),
         created_at: Joi.date().default('now'),
-        pp: Joi.string().max(255),
-        username: Joi.string().min(3).max(16).lowercase().regex(/[\w\_]*/).required().unique()
+        pp: Joi.string().max(255).group(['author']),
+        username: Joi.string().min(3).max(16).lowercase().regex(/[\w\_]*/).required().unique().group(['author'])
     })
 
     constructor(initialState: any, options: any){

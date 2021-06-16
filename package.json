@@ -15,7 +15,7 @@
     "base-x": "^3.0.8",
     "create-hash": "^1.2.0",
     "elliptic": "^6.5.4",
-    "elzeard": "^1.1.6",
+    "elzeard": "^1.1.7",
     "express-form-data": "^2.0.17",
     "lodash": "^4.17.21",
     "morgan": "^1.10.0"
