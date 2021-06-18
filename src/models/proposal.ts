@@ -28,8 +28,7 @@ export class ProposalCollection extends Collection {
     }
 
     fetchByPubK = (public_key: string) => this.quick().find({ public_key }) 
-
-
+    pullBySID = (sid: number, page: number) => this.copy().sql().pull().where({sid}).orderBy('created_at', 'desc').offset(page * 10).limit((page+1) * 10).run()
 }
 
 export default new ProposalCollection([], {table: 'proposals'})

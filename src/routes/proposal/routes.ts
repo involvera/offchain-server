@@ -2,7 +2,7 @@ import express from 'express'
 import proposal from '../../models/proposal'
 import { bodyAssignator } from '../../utils'
 import { CheckIfProposalAlreadyRecorded, CheckSIDAndAssignLinkToProposal, CheckSignatureOnProposalContent } from './middleware'
-import { PostProposal } from './methods'
+import { PostProposal, GetProposalList } from './methods'
 
 export default (server: express.Express) => { 
 
@@ -16,6 +16,8 @@ export default (server: express.Express) => {
     CheckSignatureOnProposalContent,
     CheckIfProposalAlreadyRecorded,
     CheckSIDAndAssignLinkToProposal,
-    PostProposal
-)
+    PostProposal)
+
+    server.get('/proposal/:sid', GetProposalList)
+
 }
