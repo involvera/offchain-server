@@ -12,13 +12,15 @@
   "dependencies": {
     "@types/base-x": "^3.0.6",
     "@types/create-hash": "^1.2.2",
+    "@types/node-fetch": "^2.5.10",
     "base-x": "^3.0.8",
     "create-hash": "^1.2.0",
     "elliptic": "^6.5.4",
     "elzeard": "^1.1.7",
     "express-form-data": "^2.0.17",
     "lodash": "^4.17.21",
-    "morgan": "^1.10.0"
+    "morgan": "^1.10.0",
+    "node-fetch": "^2.6.1"
   },
   "devDependencies": {
     "@types/elliptic": "^6.4.12",

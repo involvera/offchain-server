@@ -19,13 +19,13 @@ export class SocietyModel extends Model {
 
     get = () => {
         return {
-            ID: () => this.state.id,
-            name: () => this.state.name,
-            currencyRouteAPI: () => this.state.currency_route_api,
-            currencySymbol: () => this.state.currency_symbol,
-            description: () => this.state.description,
-            domain: () => this.state.domain,
-            createdAt: () => this.state.created_at,
+            ID: (): number => this.state.id,
+            name: (): string => this.state.name,
+            currencyRouteAPI: (): string => this.state.currency_route_api,
+            currencySymbol: (): string => this.state.currency_symbol,
+            description: (): string => this.state.description,
+            domain: (): string => this.state.domain,
+            createdAt: (): Date => this.state.created_at,
         }
     }
 }
