@@ -1,5 +1,5 @@
 import express from 'express'
-import proposal from '../../models/proposal'
+import proposal, { ProposalCollection } from '../../models/proposal'
 
 export const PostProposal = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     try {
@@ -19,7 +19,8 @@ export const GetProposalList = async (req: express.Request, res: express.Respons
     const { page } = req.headers
 
     try {
-        const list = await proposal.pullBySID(parseInt(req.params.sid), !page ? 0 : parseInt(page as string))
+        const list = await proposal.pullBySID(parseInt(req.params.sid), !page ? 0 : parseInt(page as string)) as ProposalCollection
+        list.parseJSONForEveryStringObject()
         res.status(200)
         res.json(list.local().to().plain())
     } catch (e){
