@@ -2,7 +2,8 @@ import express from 'express'
 import alias from '../models/alias' 
 import { ec as EC } from 'elliptic'
 const ec = new EC('secp256k1');
-import { ToPubKeyHash, bodyAssignator} from '../utils'
+import { bodyAssignator} from '../utils'
+import {ToPubKeyHash } from 'wallet-util'
 
 export const checkSignatureOnUsername = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const { signature, public_key } = req.headers

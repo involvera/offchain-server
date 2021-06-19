@@ -1,0 +1,10 @@
+{
+    "id": "t.increments('id').primary()",
+    "name": "t.string('name', 30).notNullable()",
+    "path_name": "t.string('path_name', 20).unique().notNullable()",
+    "currency_route_api": "t.string('currency_route_api', 255).unique().notNullable()",
+    "currency_symbol": "t.string('currency_symbol', 5).notNullable()",
+    "description": "t.string('description', 140)",
+    "domain": "t.string('domain', 255)",
+    "created_at": "t.dateTime('created_at').defaultTo(knex.raw('now()'))"
+}

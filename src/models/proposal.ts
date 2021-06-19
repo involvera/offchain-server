@@ -14,7 +14,6 @@ export class ProposalModel extends Model {
         content_link: Joi.string().required(),
         vote: Joi.string(),
         created_at: Joi.date().default('now')
-
     })
 
     constructor(initialState: any, options: any){

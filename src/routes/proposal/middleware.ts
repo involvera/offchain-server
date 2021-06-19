@@ -2,7 +2,7 @@ import express from 'express'
 import proposal from '../../models/proposal'
 import society, { SocietyModel } from '../../models/society'
 import fetch from 'node-fetch'
-import { ToPubKeyHash } from '../../utils'
+import { ToPubKeyHash } from 'wallet-util'
 import { IContentLink } from './interfaces'
 
 import { ec as EC } from 'elliptic'
