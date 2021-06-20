@@ -1,7 +1,7 @@
 import express from 'express'
 import proposal from '../../models/proposal'
 import { bodyAssignator } from '../../utils'
-import { CheckIfProposalAlreadyRecorded, CheckSIDAndAssignLinkToProposal, CheckSignatureOnProposalContent } from './middleware'
+import { CheckIfProposalAlreadyRecorded, CheckSIDAndAssignLinkToProposal, CheckSignatureOnProposalContent, CheckContent, CheckIfAliasExist } from './middleware'
 import { PostProposal, GetProposalList } from './methods'
 
 export default (server: express.Express) => { 
@@ -10,12 +10,14 @@ export default (server: express.Express) => {
 
     server.post('/proposal', 
     bodyAssignator((req: express.Request) => {
-        return {  content_link: '_', vote: '_', index: 0, author_public_key_hashed: '0000000000000000000000000000000000000000' }
+        return {  content_link: '_', vote: '_', index: 0, author: '1111111111111111111111111111111111' }
     }),
     schemaValidator,
+    CheckContent,
     CheckSignatureOnProposalContent,
     CheckIfProposalAlreadyRecorded,
     CheckSIDAndAssignLinkToProposal,
+    CheckIfAliasExist,
     PostProposal)
 
     server.get('/proposal/:sid', GetProposalList)

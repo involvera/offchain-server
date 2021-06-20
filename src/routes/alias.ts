@@ -3,7 +3,7 @@ import alias from '../models/alias'
 import { ec as EC } from 'elliptic'
 const ec = new EC('secp256k1');
 import { bodyAssignator} from '../utils'
-import {ToPubKeyHash } from 'wallet-util'
+import { ToPubKeyHash, GetAddressFromPubKeyHash } from 'wallet-util'
 
 export const checkSignatureOnUsername = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const { signature, public_key } = req.headers
@@ -22,15 +22,15 @@ export default (server: express.Express) => {
 
     server.post('/alias', 
         bodyAssignator((req: express.Request) => {
-            return { public_key_hashed: ToPubKeyHash(Buffer.from(req.headers.public_key as string, 'hex')).toString('hex')  }
+            return { address: GetAddressFromPubKeyHash(ToPubKeyHash(Buffer.from(req.headers.public_key as string, 'hex'))) }
         }),
         schemaValidator,
         checkSignatureOnUsername,
         async (req: express.Request, res: express.Response) => {
-            const {public_key_hashed} = req.body
+            const { address } = req.body
 
             try {
-                let a = await alias.quick().find({ public_key_hashed })
+                let a = await alias.quick().find({ address })
                 if (!a){
                     a = await alias.quick().create(req.body)
                     res.status(201)
@@ -45,4 +45,16 @@ export default (server: express.Express) => {
             }
         }
     )
+
+    server.get('/alias/:address', async (req: express.Request, res: express.Response) => {
+        const { address } = req.params     
+        try {
+            const a = await alias.quick().find({ address: address })
+            res.status(200)
+            res.json(a.to().filterGroup('author').plain())
+        } catch (e){
+            res.status(500)
+            res.json(e.toString())
+        }
+    })
 }

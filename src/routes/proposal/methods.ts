@@ -1,14 +1,12 @@
 import express from 'express'
-import proposal, { ProposalCollection } from '../../models/proposal'
+import proposal, { ProposalCollection, ProposalModel } from '../../models/proposal'
 
-export const PostProposal = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+export const PostProposal = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     try {
-        proposal.quick().create(req.body)
-        res.status(201)
-        res.json(Object.assign({}, req.body, {
-            content_link: JSON.parse(req.body.content_link),
-            vote: JSON.parse(req.body.vote)
-        }))
+        const p = await proposal.quick().create(req.body) as ProposalModel
+        p.prepareJSONRendering()
+        res.status(201) 
+        res.json(p.to().plain())
     } catch (e){
         res.status(500)
         res.json(e.toString())
@@ -20,8 +18,8 @@ export const GetProposalList = async (req: express.Request, res: express.Respons
 
     try {
         const list = await proposal.pullBySID(parseInt(req.params.sid), !page ? 0 : parseInt(page as string)) as ProposalCollection
-        list.parseJSONForEveryStringObject()
         res.status(200)
+        list.prepareJSONRendering()
         res.json(list.local().to().plain())
     } catch (e){
         res.status(500)

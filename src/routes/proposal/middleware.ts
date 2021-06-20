@@ -2,11 +2,24 @@ import express from 'express'
 import proposal from '../../models/proposal'
 import society, { SocietyModel } from '../../models/society'
 import fetch from 'node-fetch'
-import { ToPubKeyHash } from 'wallet-util'
+import { ToPubKeyHash, GetAddressFromPubKeyHash } from 'wallet-util'
 import { IContentLink } from './interfaces'
 
 import { ec as EC } from 'elliptic'
+import alias from '../../models/alias'
 const ec = new EC('secp256k1');
+
+
+export const CheckContent = (req: express.Request, res: express.Response, next: express.NextFunction) => { 
+    const { content } = req.body
+    if ((content as string).split('~~~_~~~_~~~_~~~').length == 3){
+        next()
+        return
+    }
+    res.status(406)
+    res.json({error: "Content must contains 3 parts"})
+    return
+}
 
 export const CheckSignatureOnProposalContent = (req: express.Request, res: express.Response, next: express.NextFunction) => { 
     const { signature, public_key, content } = req.body
@@ -45,7 +58,7 @@ export const CheckSIDAndAssignLinkToProposal = async (req: express.Request, res:
         if (r.status == 200){
             const json = await r.json() as IContentLink
             req.body = Object.assign(req.body, {
-                author_public_key_hashed: json.pubkh_origin,
+                author: GetAddressFromPubKeyHash(Buffer.from(json.pubkh_origin, 'hex')),
                 vote: JSON.stringify(json.vote),
                 content_link: JSON.stringify(json.link),
                 index: json.index
@@ -60,4 +73,16 @@ export const CheckSIDAndAssignLinkToProposal = async (req: express.Request, res:
         res.status(500)
         res.json(e.toString())
     }
+}
+
+export const CheckIfAliasExist = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const { author } = req.body
+
+    const a = await alias.findByAddress(author)
+    if (!a){
+        res.status(404)
+        res.json({error: "You need to create an alias on your address before adding content."})
+        return
+    }
+    next()
 }
