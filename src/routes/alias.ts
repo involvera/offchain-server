@@ -9,12 +9,18 @@ export const checkSignatureOnUsername = async (req: express.Request, res: expres
     const { signature, public_key } = req.headers
     const { username } = req.body
 
-    if (!ec.verify(Buffer.from(username), Buffer.from(signature as string, 'hex'), Buffer.from(public_key as string, 'hex'))){
+    const err = () => {
         res.status(401)
-        res.json({error: `Wrong signature on username.`})
-        return
+        res.json({error: `Wrong signature on content.`})     
     }
-    next()
+
+    try {
+        const res = ec.verify(Buffer.from(username), Buffer.from(signature as string, 'hex'), Buffer.from(public_key as string, 'hex'))
+        res && next()
+        !res && err()
+    } catch (e){
+        err()
+    }
 }
 
 export default (server: express.Express) => {

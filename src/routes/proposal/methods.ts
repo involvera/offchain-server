@@ -5,7 +5,7 @@ export const PostProposal = async (req: express.Request, res: express.Response, 
     try {
         const p = await proposal.quick().create(req.body) as ProposalModel
         p.prepareJSONRendering()
-        res.status(201) 
+        res.status(201)
         res.json(p.to().plain())
     } catch (e){
         res.status(500)

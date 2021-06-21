@@ -1,4 +1,3 @@
-
 export interface IOutput {
     input_src_idxs: number[]
     value: string

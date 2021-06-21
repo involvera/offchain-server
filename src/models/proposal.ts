@@ -22,6 +22,7 @@ export class ProposalModel extends Model {
             sid: () => this.state.sid,
         }
     }
+
     prepareJSONRendering = () => {
         this.setState({
             content_link: JSON.parse(this.state.content_link),

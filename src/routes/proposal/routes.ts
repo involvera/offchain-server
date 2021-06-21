@@ -1,7 +1,7 @@
 import express from 'express'
 import proposal from '../../models/proposal'
 import { bodyAssignator } from '../../utils'
-import { CheckIfProposalAlreadyRecorded, CheckSIDAndAssignLinkToProposal, CheckSignatureOnProposalContent, CheckContent, CheckIfAliasExist } from './middleware'
+import { CheckIfProposalAlreadyRecorded, CheckSIDAndAssignLinkToProposal, CheckSignatureContent, CheckContent, CheckIfAliasExist } from './middleware'
 import { PostProposal, GetProposalList } from './methods'
 
 export default (server: express.Express) => { 
@@ -14,7 +14,7 @@ export default (server: express.Express) => {
     }),
     schemaValidator,
     CheckContent,
-    CheckSignatureOnProposalContent,
+    CheckSignatureContent,
     CheckIfProposalAlreadyRecorded,
     CheckSIDAndAssignLinkToProposal,
     CheckIfAliasExist,

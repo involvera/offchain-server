@@ -3,7 +3,7 @@ import proposal from '../../models/proposal'
 import society, { SocietyModel } from '../../models/society'
 import fetch from 'node-fetch'
 import { ToPubKeyHash, GetAddressFromPubKeyHash } from 'wallet-util'
-import { IContentLink } from './interfaces'
+import { IContentLink } from '../interfaces'
 
 import { ec as EC } from 'elliptic'
 import alias from '../../models/alias'
@@ -21,15 +21,21 @@ export const CheckContent = (req: express.Request, res: express.Response, next: 
     return
 }
 
-export const CheckSignatureOnProposalContent = (req: express.Request, res: express.Response, next: express.NextFunction) => { 
+export const CheckSignatureContent = (req: express.Request, res: express.Response, next: express.NextFunction) => { 
     const { signature, public_key, content } = req.body
-    
-    if (!ec.verify(Buffer.from(content), Buffer.from(signature as string, 'hex'), Buffer.from(public_key as string, 'hex'))){
+
+    const err = () => {
         res.status(401)
-        res.json({error: `Wrong signature on content.`})
-        return
+        res.json({error: `Wrong signature on content.`})     
     }
-    next()
+
+    try {
+        const res = ec.verify(Buffer.from(content), Buffer.from(signature as string, 'hex'), Buffer.from(public_key as string, 'hex'))
+        res && next()
+        !res && err()
+    } catch (e){
+        err()
+    }
 }
 
 export const CheckIfProposalAlreadyRecorded = async (req: express.Request, res: express.Response, next: express.NextFunction) => { 
