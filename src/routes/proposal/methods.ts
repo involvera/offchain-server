@@ -20,7 +20,7 @@ export const GetProposalList = async (req: express.Request, res: express.Respons
         const list = await proposal.pullBySID(parseInt(req.params.sid), !page ? 0 : parseInt(page as string)) as ProposalCollection
         res.status(200)
         list.prepareJSONRendering()
-        res.json(list.local().to().plain())
+        res.json(list.local().to().filterGroup('author').plain())
     } catch (e){
         res.status(500)
         res.json(e.toString())
