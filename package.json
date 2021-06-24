@@ -10,7 +10,7 @@
     "start-dev": "tsc && NODE_ENV=development node ./dist/index.js"
   },
   "dependencies": {
-    "elzeard": "^1.1.7",
+    "elzeard": "^1.1.8",
     "express": "^4.17.1",
     "express-form-data": "^2.0.17",
     "express-rate-limit": "^5.2.6",
