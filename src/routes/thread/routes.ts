@@ -1,5 +1,5 @@
 import express from 'express'
-import thread from '../../models/thread'
+import { thread } from '../../models'
 import { bodyAssignator } from '../../utils'
 import { CheckSignatureContent, CheckIfAliasExist } from '../proposal/middleware'
 import { CheckSIDAndAssignLinkToThread, CheckIfThreadAlreadyRecorded } from './middleware'

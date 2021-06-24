@@ -1,8 +1,7 @@
 import express from 'express'
-import thread from '../../models/thread'
-import society, { SocietyModel } from '../../models/society'
 import fetch from 'node-fetch'
 import { ToPubKeyHash, GetAddressFromPubKeyHash } from 'wallet-util'
+import { thread, society, SocietyModel } from '../../models'
 import { IContentLink } from '../interfaces'
 
 export const CheckSIDAndAssignLinkToThread = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -23,8 +22,9 @@ export const CheckSIDAndAssignLinkToThread = async (req: express.Request, res: e
             })
             next()
         } else {
+            const text = await r.text()
             res.status(r.status)
-            res.json(await r.json())
+            res.json({error: text})
             return
         }
     } catch (e){

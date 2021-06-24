@@ -1,30 +1,19 @@
 import express from 'express'
-import society from '../models/society' 
-import { ADMIN_KEY } from '../static'
-
-export const checkAdminKey = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    const { admin_key } = req.headers
-
-    if (admin_key != ADMIN_KEY){
-        res.status(401)
-        res.json({error: `You can't perform this action.`})
-        return
-    } 
-    next()
-}
+import { society } from '../models' 
+import { CheckAdminKey } from './admin'
 
 export default (server: express.Express) => {
     const { schemaValidator } = society.expressTools().middleware()
     const { postHandler } = society.expressTools().request()
 
     server.post('/society', 
-        checkAdminKey,
+        CheckAdminKey,
         schemaValidator,
         postHandler(['name', 'path_name', 'currency_route_api', 'currency_symbol', 'description', 'domain'])
     )
 
     server.put('/society/:id', 
-    checkAdminKey,
+    CheckAdminKey,
     schemaValidator,
     async (req: express.Request, res: express.Response) => {
         const id = req.params.id        
@@ -38,4 +27,17 @@ export default (server: express.Express) => {
             res.status(500)
         }
     })
+
+    server.get('/society/:id',
+    async (req: express.Request, res: express.Response) => {
+        const id = req.params.id      
+        const s = await society.fetchByID(parseInt(id))
+        if (s){
+            res.status(200)
+            res.json(s.to().plain())
+            return
+        }
+        res.status(404)
+    })
+
 }

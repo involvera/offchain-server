@@ -1,5 +1,5 @@
 import express from 'express'
-import proposal from '../../models/proposal'
+import { proposal }  from '../../models'
 import { bodyAssignator } from '../../utils'
 import { CheckIfProposalAlreadyRecorded, CheckSIDAndAssignLinkToProposal, CheckSignatureContent, CheckContent, CheckIfAliasExist } from './middleware'
 import { PostProposal, GetProposalList } from './methods'

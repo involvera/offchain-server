@@ -1,5 +1,5 @@
 import express from 'express'
-import thread, { ThreadModel } from '../../models/thread'
+import { thread, ThreadModel } from '../../models'
 
 export const PostThread = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     try {

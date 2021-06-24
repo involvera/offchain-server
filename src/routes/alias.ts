@@ -1,25 +1,17 @@
 import express from 'express'
-import alias from '../models/alias' 
-import { ec as EC } from 'elliptic'
-const ec = new EC('secp256k1');
+import { ToPubKeyHash, GetAddressFromPubKeyHash, VerifySignatureHex } from 'wallet-util'
+import { alias } from '../models' 
 import { bodyAssignator} from '../utils'
-import { ToPubKeyHash, GetAddressFromPubKeyHash } from 'wallet-util'
 
 export const checkSignatureOnUsername = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const { signature, public_key } = req.headers
     const { username } = req.body
 
-    const err = () => {
+    if (VerifySignatureHex({signature_hex: signature as string, public_key_hex: public_key as string}, Buffer.from(username))){
+        next()
+    } else {
         res.status(401)
-        res.json({error: `Wrong signature on content.`})     
-    }
-
-    try {
-        const res = ec.verify(Buffer.from(username), Buffer.from(signature as string, 'hex'), Buffer.from(public_key as string, 'hex'))
-        res && next()
-        !res && err()
-    } catch (e){
-        err()
+        res.json({error: `Wrong signature on content.`})
     }
 }
 

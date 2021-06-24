@@ -1,5 +1,5 @@
 import express from 'express'
-import proposal, { ProposalCollection, ProposalModel } from '../../models/proposal'
+import { proposal, ProposalCollection, ProposalModel } from '../../models'
 
 export const PostProposal = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     try {
