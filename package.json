@@ -6,18 +6,22 @@
   "author": "fantasim <siuol@gmx.com>",
   "license": "MIT",
   "scripts": {
+    "test": "mocha --timeout 10000 -r ts-node/register tests/index.ts",
     "start-prod": "tsc && NODE_ENV=production node ./dist/index.js",
     "start-dev": "tsc && NODE_ENV=development node ./dist/index.js"
   },
   "dependencies": {
+    "@types/markdown-it": "^12.0.2",
     "elzeard": "^1.1.8",
     "express": "^4.17.1",
     "express-form-data": "^2.0.17",
     "express-rate-limit": "^5.2.6",
     "lodash": "^4.17.21",
+    "markdown-it": "^12.0.6",
     "morgan": "^1.10.0",
     "node-fetch": "^2.6.1",
-    "wallet-script": "^1.0.1",
+    "strip-markdown": "^4.0.0",
+    "wallet-script": "^1.0.3",
     "wallet-util": "^1.0.2"
   },
   "devDependencies": {
@@ -28,7 +32,10 @@
     "@types/lodash": "^4.14.170",
     "@types/morgan": "^1.9.2",
     "@types/node-fetch": "^2.5.10",
+    "chai": "^4.3.4",
+    "mocha": "^9.0.1",
     "nodemon": "^2.0.7",
+    "ts-node": "^9.1.1",
     "tslint": "^6.1.3",
     "typescript": "^4.3.2"
   }

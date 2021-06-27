@@ -1,5 +1,11 @@
 import { Joi, Collection, Model } from 'elzeard'
 
+export interface IAuthor {
+    address: string,
+    pp: string
+    username: string
+}
+
 export class AliasModel extends Model {
 
     static schema = Joi.object({
