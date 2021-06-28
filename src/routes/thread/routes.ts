@@ -3,7 +3,7 @@ import { thread } from '../../models'
 import { bodyAssignator } from '../../utils'
 import { CheckSignatureContent, CheckIfAliasExist } from '../proposal/middleware'
 import { CheckSIDAndAssignLinkToThread, CheckIfThreadAlreadyRecorded } from './middleware'
-import { GetThreadList, PostThread} from './method'
+import { GetThreadList} from './method'
 
 export default (server: express.Express) => { 
 
