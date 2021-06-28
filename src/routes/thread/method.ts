@@ -1,12 +1,13 @@
 import express from 'express'
 import { thread, ThreadModel } from '../../models'
 
-export const PostThread = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+export const GetThreadList = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const { page } = req.headers
+
     try {
-        const p = await thread.quick().create(req.body) as ThreadModel
-        p.prepareJSONRendering()
-        res.status(201)
-        res.json(p.to().plain())
+        const list = await thread.pullBySID(parseInt(req.params.sid), !page ? 0 : parseInt(page as string))
+        res.status(200)
+        res.json(list.renderJSON())
     } catch (e){
         res.status(500)
         res.json(e.toString())

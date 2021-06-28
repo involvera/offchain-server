@@ -9,6 +9,7 @@ export interface IAuthor {
 export class AliasModel extends Model {
 
     static schema = Joi.object({
+        id: Joi.number().autoIncrement().primaryKey(),
         address: Joi.string().regex(/^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,39}$/).max(39).unique().required().group(['author']),
         created_at: Joi.date().default('now'),
         pp: Joi.string().max(255).group(['author']),

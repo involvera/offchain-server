@@ -1,8 +1,0 @@
-{
-    "id": "t.increments('id').primary()",
-    "sid": "t.specificType('sid', 'int unsigned').references('id').inTable('societies').notNullable()",
-    "address": "t.string('address', 40).unique().notNullable()",
-    "created_at": "t.dateTime('created_at').defaultTo(knex.raw('now()'))",
-    "pp": "t.string('pp', 255)",
-    "username": "t.string('username', 16).unique().notNullable()"
-}

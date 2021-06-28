@@ -13,11 +13,13 @@ export const CheckSIDAndAssignLinkToThread = async (req: express.Request, res: e
         return
     }
     try {
-        const r = await fetch(s.get().currencyRouteAPI() + `/thread/${ToPubKeyHash(Buffer.from(public_key, 'hex')).toString('hex')}`)
+        const public_key_hashed = ToPubKeyHash(Buffer.from(public_key, 'hex')).toString('hex')
+        const r = await fetch(s.get().currencyRouteAPI() + `/thread/${public_key_hashed}`)
         if (r.status == 200){
             const json = await r.json() as IContentLink
             req.body = Object.assign(req.body, {
                 author: GetAddressFromPubKeyHash(Buffer.from(json.pubkh_origin, 'hex')),
+                public_key_hashed,
                 content_link: JSON.stringify(json.link),
             })
             next()

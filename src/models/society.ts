@@ -35,7 +35,7 @@ export class SocietyCollection extends Collection {
         super(initialState, [SocietyModel, SocietyCollection], options)
     }
 
-    fetchByID = async (id: number) => await this.quick().find({id})
+    fetchByID = async (id: number) => await this.quick().find({id}) as SocietyModel
 }
 
 

@@ -6,31 +6,20 @@ export interface IEmbed {
     type: TEmbedType
     embed_code: string
 }
-export const BuildThreadEmbedString = (pkh: string, author: any, created_at: Date, target_id: string | null, title: string, text: string): IEmbed => {
+export const BuildThreadPreviewString = (pkh: string, author: any, created_at: Date, target_id: string | null, title: string, text: string): IEmbed => {
     
-    // PKH (string) ; author (IAuthor) ; created_at (Date) ; PKH_TARGET (string | null) ; ___Title___ (string) ; ===Text===
-    const embed_code = `
-    ${pkh};
-    ${author};
-    ${created_at.toString()}
-    ${target_id};
-    ___${title}___;
-    ===${text}===    
-    `.replace('\n', '')
+    const content = title.length >= 70 ? title : (title.length > 0 && text.length > 0 ? title + ' : ' + text : (text || title))
+
+    // PKH (string) ; author (IAuthor) ; created_at (Date) ; PKH_TARGET (string | null) ; Text;
+    const embed_code = `${pkh};${author};${created_at.toString()};${target_id};${CutText( content )}`
     
     return { type: 'thread', embed_code }
 }
 
-export const BuildProposalEmbedString = (pkh: string, type: string, created_at: Date, vote: IVote, title: string): IEmbed => {
+export const BuildProposalPreviewString = (pkh: string, type: string, created_at: Date, vote: IVote, title: string): IEmbed => {
     
     //PKH (string) ; type (string) ; created_at (Date) ; vote (IVOTE) ; Title
-    const embed_code = `
-    ${pkh};
-    ${type};
-    ${created_at.toString()}
-    ${JSON.stringify(vote)};
-    ${title};
-    `.replace('\n', '')
+    const embed_code = `${pkh};${type};${created_at.toString()};${JSON.stringify(vote)};${title};`
 
     return { type: 'proposal', embed_code }
 }

@@ -3,21 +3,24 @@ import { thread } from '../../models'
 import { bodyAssignator } from '../../utils'
 import { CheckSignatureContent, CheckIfAliasExist } from '../proposal/middleware'
 import { CheckSIDAndAssignLinkToThread, CheckIfThreadAlreadyRecorded } from './middleware'
-import { PostThread} from './method'
+import { GetThreadList, PostThread} from './method'
 
 export default (server: express.Express) => { 
 
     const { schemaValidator } = thread.expressTools().middleware()
+    const { postHandler } = thread.expressTools().request()
+
 
     server.post('/thread', 
-    bodyAssignator(() => { return { content_link: '_', author: '1111111111111111111111111111111111' } }),
+    bodyAssignator(() => { return { content_link: '_', author: '1111111111111111111111111111111111', public_key_hashed: "0000000000000000000000000000000000000000" } }),
     schemaValidator,
     CheckSignatureContent,
     CheckIfThreadAlreadyRecorded,
     CheckSIDAndAssignLinkToThread,
     CheckIfAliasExist,
-    PostThread)
+    postHandler(['content', 'title', 'public_key', 'signature', 'content_link', 'author', 'public_key_hashed', 'sid'], 'author')
+    )
 
-    // server.get('/proposal/:sid', GetProposalList)
+    server.get('/thread/:sid', GetThreadList)
 
 }

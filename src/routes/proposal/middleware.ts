@@ -47,14 +47,17 @@ export const CheckSIDAndAssignLinkToProposal = async (req: express.Request, res:
         res.status(404)
         return
     }
+
     try {
-        const r = await fetch(s.get().currencyRouteAPI() + `/proposal/${ToPubKeyHash(Buffer.from(public_key, 'hex')).toString('hex')}`)
+        const public_key_hashed = ToPubKeyHash(Buffer.from(public_key, 'hex')).toString('hex')
+        const r = await fetch(s.get().currencyRouteAPI() + `/proposal/${public_key_hashed}`)
         if (r.status == 200){
             const json = await r.json() as IContentLink
             req.body = Object.assign(req.body, {
                 author: GetAddressFromPubKeyHash(Buffer.from(json.pubkh_origin, 'hex')),
                 vote: JSON.stringify(json.vote),
                 content_link: JSON.stringify(json.link),
+                public_key_hashed, 
                 index: json.index
             })
             next()

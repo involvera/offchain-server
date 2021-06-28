@@ -34,9 +34,9 @@ export default (server: express.Express) => {
         try {
             let s = await society.fetchByID(parseInt(sid)) as SocietyModel
             if (s){
-                thread.quick().remove({sid: s.get().ID() })
-                proposal.quick().remove({sid: s.get().ID() })
-                alias.sql().remove().all()
+                await thread.quick().remove({sid: s.get().ID() })
+                await proposal.quick().remove({sid: s.get().ID() })
+                await alias.sql().remove().all()
                 res.sendStatus(200)
                 return
             }
