@@ -4,7 +4,7 @@ import initSociety from './society'
 import initProposal from './proposal/routes'
 import initThread from './thread/routes'
 import initAdmin from './admin'
-import initReaction from './reaction'
+import initReward from './reward'
 
 
 export const initRoutes = (server: express.Express) => {
@@ -13,5 +13,5 @@ export const initRoutes = (server: express.Express) => {
     initProposal(server)
     initThread(server)
     initAdmin(server)
-    initReaction(server)
+    initReward(server)
 }

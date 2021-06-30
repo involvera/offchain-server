@@ -25,7 +25,7 @@ export interface IContentLink {
     pubkh_origin: string
 }
 
-export interface IReactionLink {
+export interface IRewardLink {
     tx_id: string
     vout: number
     output: IOutput

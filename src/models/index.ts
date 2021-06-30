@@ -2,14 +2,14 @@ import alias from './alias'
 import proposal from './proposal'
 import society from './society'
 import thread from './thread'
-import reaction from './reaction'
+import reward from './reward'
 
 export { AliasModel, AliasCollection } from './alias'
 export { ProposalModel, ProposalCollection } from './proposal'
 export { SocietyModel, SocietyCollection } from './society'
 export { ThreadModel, ThreadCollection } from './thread'
-export { ReactionModel, ReactionCollection } from './reaction'
+export { RewardModel, RewardCollection } from './reward'
 
 export {
-    alias, proposal, society, thread, reaction
+    alias, proposal, society, thread, reward
 }

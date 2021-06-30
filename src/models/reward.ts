@@ -1,11 +1,11 @@
 import { Joi, Collection, Model } from 'elzeard'
 import { AliasModel } from './alias'
 
-export class ReactionModel extends Model {
+export class RewardModel extends Model {
 
     static schema = Joi.object({
         id: Joi.number().autoIncrement().primaryKey().group(['full']),
-        sid: Joi.number().foreignKey('societies', 'id').noPopulate().required().group(['view', 'full']),
+        sid: Joi.number().foreignKey('societies', 'id').noPopulate().required().group(['preview', 'view', 'full']),
         author: Joi.string().foreignKey('aliases', 'address', 'author').group(['view', 'full']),
 
         category: Joi.number().allow(0, 1, 2, 3).default(0).required().group(['preview', 'view', 'full']),
@@ -17,7 +17,7 @@ export class ReactionModel extends Model {
     })
 
     constructor(initialState: any, options: any){
-        super(initialState, ReactionModel, options)
+        super(initialState, RewardModel, options)
     }
     
     get = () => {
@@ -34,12 +34,12 @@ export class ReactionModel extends Model {
     }
 }
 
-export class ReactionCollection extends Collection {
+export class RewardCollection extends Collection {
     constructor(initialState: any, options: any){
-        super(initialState, [ReactionModel, ReactionCollection], options)
+        super(initialState, [RewardModel, RewardCollection], options)
     }
 
-    fetchByTxIDAndVout = async (sid: number, tx_id: string, vout: number) => await this.quick().find({sid, tx_id, vout}) as ReactionModel
+    fetchByTxIDAndVout = async (sid: number, tx_id: string, vout: number) => await this.quick().find({sid, tx_id, vout}) as RewardModel
 }
 
-export default new ReactionCollection([], {table: 'reactions'})
+export default new RewardCollection([], {table: 'rewards'})
