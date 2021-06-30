@@ -14,12 +14,12 @@ export default (server: express.Express) => {
     bodyAssignator((req: express.Request) => {
         return {  content_link: '_', vote: '_', index: 0, author: '1111111111111111111111111111111111', public_key_hashed: '0000000000000000000000000000000000000000' }
     }),
-    schemaValidator,
-    CheckContent,
     CheckSignatureContent,
     CheckIfSocietyExists,
     CheckIfProposalAlreadyRecorded,
     GetAndAssignLinkToProposal,
+    CheckContent,
+    schemaValidator,
     CheckIfAliasExist,
     postHandler(['content', 'title', 'public_key', 'signature', 'content_link', 'vote', 'index', 'author', 'public_key_hashed', 'sid'], 'author'))
 

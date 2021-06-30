@@ -1,17 +1,29 @@
 import express from 'express'
 import {proposal, alias, SocietyModel } from '../../models'
 import fetch from 'node-fetch'
-import { ToPubKeyHash, GetAddressFromPubKeyHash, VerifySignatureHex } from 'wallet-util'
-import { IContentLink } from '../interfaces'
+import { ToPubKeyHash, GetAddressFromPubKeyHash, VerifySignatureHex, ToArrayBufferFromB64 } from 'wallet-util'
+import { ScriptEngine } from 'wallet-script'
+import { IContentLink, IKindLink } from '../interfaces'
+
 
 export const CheckContent = (req: express.Request, res: express.Response, next: express.NextFunction) => { 
-    const { content } = req.body
-    if ((content as string).split('~~~_~~~_~~~_~~~').length == 3){
-        next()
-        return
+    const { content, content_link } = req.body
+
+    const link: IKindLink = JSON.parse(content_link)
+    const length = (content as string).split('~~~_~~~_~~~_~~~').length
+    if (new ScriptEngine(ToArrayBufferFromB64(link.output.script)).proposalContentTypeString() == 'APPLICATION'){
+        if (length == 4){
+            next()
+            return
+        }
+    } else {
+        if (length == 3){
+            next()
+            return
+        }
     }
     res.status(406)
-    res.json({error: "Content must contains 3 parts"})
+    res.json({error: "Wrong length of content."})
     return
 }
 
