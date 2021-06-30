@@ -37,7 +37,9 @@ export class AliasCollection extends Collection {
         super(initialState, [AliasModel, AliasCollection], options)
     }
 
-    findByAddress = (address: string) => this.quick().find({address})
+    findByAddress = async (address: string) => await this.quick().find({address}) as AliasModel
+    findByUsername = async (username: string) => await this.quick().find({username}) as AliasModel
+    pullByAddresses = async (addresses: string[]) => await this.copy().sql().pull().whereIn('address', addresses).run() as AliasCollection
 }
 
 export default new AliasCollection([], {table: 'aliases'})

@@ -1,18 +1,14 @@
 import express from 'express'
 import fetch from 'node-fetch'
 import { ToPubKeyHash, GetAddressFromPubKeyHash } from 'wallet-util'
-import { thread, society, SocietyModel } from '../../models'
+import { thread, SocietyModel } from '../../models'
 import { IContentLink } from '../interfaces'
 
-export const CheckSIDAndAssignLinkToThread = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    const { sid, public_key } = req.body
+export const GetAndAssignLinkToThread = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const { public_key } = req.body
     
-    const s = await society.fetchByID(sid) as SocietyModel
-    if (!s){
-        res.status(404)
-        return
-    }
     try {
+        const s = res.locals.society as SocietyModel
         const public_key_hashed = ToPubKeyHash(Buffer.from(public_key, 'hex')).toString('hex')
         const r = await fetch(s.get().currencyRouteAPI() + `/thread/${public_key_hashed}`)
         if (r.status == 200){

@@ -24,3 +24,11 @@ export interface IContentLink {
     link: IKindLink
     pubkh_origin: string
 }
+
+export interface IReactionLink {
+    tx_id: string
+    vout: number
+    output: IOutput
+    category: number
+    pubkh_origin: string
+}

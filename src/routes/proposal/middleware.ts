@@ -1,5 +1,5 @@
 import express from 'express'
-import {society, proposal, alias, SocietyModel } from '../../models'
+import {proposal, alias, SocietyModel } from '../../models'
 import fetch from 'node-fetch'
 import { ToPubKeyHash, GetAddressFromPubKeyHash, VerifySignatureHex } from 'wallet-util'
 import { IContentLink } from '../interfaces'
@@ -39,16 +39,11 @@ export const CheckIfProposalAlreadyRecorded = async (req: express.Request, res: 
     return
 }
 
-export const CheckSIDAndAssignLinkToProposal = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    const { sid, public_key } = req.body
+export const GetAndAssignLinkToProposal = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const { public_key } = req.body
     
-    const s = await society.fetchByID(sid) as SocietyModel
-    if (!s){
-        res.status(404)
-        return
-    }
-
     try {
+        const s = res.locals.society as SocietyModel
         const public_key_hashed = ToPubKeyHash(Buffer.from(public_key, 'hex')).toString('hex')
         const r = await fetch(s.get().currencyRouteAPI() + `/proposal/${public_key_hashed}`)
         if (r.status == 200){

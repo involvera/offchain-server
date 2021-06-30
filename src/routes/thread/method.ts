@@ -1,5 +1,5 @@
 import express from 'express'
-import { thread, ThreadModel } from '../../models'
+import { thread } from '../../models'
 
 export const GetThreadList = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const { page } = req.headers

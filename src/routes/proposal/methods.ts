@@ -1,5 +1,5 @@
 import express from 'express'
-import { proposal, ProposalModel } from '../../models'
+import { proposal } from '../../models'
 
 export const GetProposalList = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const { page } = req.headers

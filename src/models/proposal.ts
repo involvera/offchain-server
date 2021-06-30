@@ -7,21 +7,21 @@ import { ToArrayBufferFromB64 } from 'wallet-util'
 
 export class ProposalModel extends Model {
     static schema = Joi.object({
-        id: Joi.number().autoIncrement().primaryKey(),
-        sid: Joi.number().foreignKey('societies', 'id').noPopulate().required(),
-        author: Joi.string().max(39).foreignKey('aliases', 'address', 'author'),
+        id: Joi.number().autoIncrement().primaryKey().group(['full']),
+        sid: Joi.number().foreignKey('societies', 'id').noPopulate().required().group(['preview', 'view', 'full']),
+        author: Joi.string().max(39).foreignKey('aliases', 'address', 'author').group(['view', 'full']),
 
-        public_key: Joi.string().max(70).hex().required(),
-        public_key_hashed: Joi.string().length(40).max(40).hex().required(),
-        signature: Joi.string().max(200).hex().required(),
+        public_key: Joi.string().max(70).hex().required().group(['full']),
+        public_key_hashed: Joi.string().length(40).max(40).hex().required().group(['full']),
+        signature: Joi.string().max(200).hex().required().group(['full']),
 
-        index: Joi.number().required(),
-        title: Joi.string().max(140).required(),
-        content: Joi.string().max(15000).required(),
+        index: Joi.number().required().group(['preview', 'view', 'full']),
+        title: Joi.string().max(140).required().group(['preview', 'view', 'full']),
+        content: Joi.string().max(15000).required().group(['view', 'full']),
 
-        content_link: Joi.string().required(),
-        vote: Joi.string().required(),
-        created_at: Joi.date().default('now')
+        content_link: Joi.string().required().group(['preview', 'view', 'full']),
+        vote: Joi.string().required().group(['preview', 'view', 'full']),
+        created_at: Joi.date().default('now').group(['preview', 'view', 'full'])
     })
 
     get = () => {
@@ -32,7 +32,6 @@ export class ProposalModel extends Model {
             },
             id: () => this.state.id, 
             sid: () => this.state.sid,
-
             title: (): string => this.state.title,
             content: (): string => this.state.content,
             author: (): AliasModel => this.state.author,

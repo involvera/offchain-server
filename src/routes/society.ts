@@ -1,6 +1,22 @@
 import express from 'express'
-import { society } from '../models' 
+import { society, SocietyModel } from '../models' 
 import { CheckAdminKey } from './admin'
+
+export const CheckIfSocietyExists = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const { sid } = req.body 
+    try {
+        const s = await society.fetchByID(sid) 
+        if (!s){
+            res.sendStatus(404)
+            return
+        }
+        res.locals.society = s
+        next()
+    } catch (e){
+        res.status(500)
+        res.json(e.toString())
+    }
+}
 
 export default (server: express.Express) => {
     const { schemaValidator } = society.expressTools().middleware()

@@ -6,19 +6,19 @@ import { AliasModel, IAuthor } from './alias'
 export class ThreadModel extends Model {
 
     static schema = Joi.object({
-        id: Joi.number().autoIncrement().primaryKey(),
-        sid: Joi.number().foreignKey('societies', 'id').noPopulate().required(),
-        author: Joi.string().max(39).foreignKey('aliases', 'address', 'author'),
+        id: Joi.number().autoIncrement().primaryKey().group(['full']),
+        sid: Joi.number().foreignKey('societies', 'id').noPopulate().required().group(['preview', 'view', 'full']),
+        author: Joi.string().max(39).foreignKey('aliases', 'address', 'author').group(['preview', 'view', 'full']),
 
-        public_key: Joi.string().max(70).hex().required(),
-        public_key_hashed: Joi.string().length(40).max(40).hex().required(),
-        signature: Joi.string().max(200).hex().required(),
+        public_key: Joi.string().max(70).hex().required().group(['full']),
+        public_key_hashed: Joi.string().length(40).max(40).hex().required().group(['full']),
+        signature: Joi.string().max(200).hex().required().group(['full']),
 
-        title: Joi.string().min(0).max(140),
-        content: Joi.string().min(20).max(5000).required(),
+        title: Joi.string().min(0).max(140).group(['preview', 'view', 'full']),
+        content: Joi.string().min(20).max(5000).required().group(['view', 'full']),
 
-        content_link: Joi.string().required(),
-        created_at: Joi.date().default('now')
+        content_link: Joi.string().required().group(['preview', 'view', 'full']),
+        created_at: Joi.date().default('now').group(['preview', 'view', 'full']),
     })
 
     constructor(initialState: any, options: any){

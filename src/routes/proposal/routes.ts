@@ -1,8 +1,9 @@
 import express from 'express'
 import { proposal }  from '../../models'
 import { bodyAssignator } from '../../utils'
-import { CheckIfProposalAlreadyRecorded, CheckSIDAndAssignLinkToProposal, CheckSignatureContent, CheckContent, CheckIfAliasExist } from './middleware'
+import { CheckIfProposalAlreadyRecorded, GetAndAssignLinkToProposal, CheckSignatureContent, CheckContent, CheckIfAliasExist } from './middleware'
 import { GetProposalList } from './methods'
+import { CheckIfSocietyExists } from '../society'
 
 export default (server: express.Express) => { 
 
@@ -16,8 +17,9 @@ export default (server: express.Express) => {
     schemaValidator,
     CheckContent,
     CheckSignatureContent,
+    CheckIfSocietyExists,
     CheckIfProposalAlreadyRecorded,
-    CheckSIDAndAssignLinkToProposal,
+    GetAndAssignLinkToProposal,
     CheckIfAliasExist,
     postHandler(['content', 'title', 'public_key', 'signature', 'content_link', 'vote', 'index', 'author', 'public_key_hashed', 'sid'], 'author'))
 

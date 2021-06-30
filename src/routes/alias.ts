@@ -44,7 +44,37 @@ export default (server: express.Express) => {
         }
     )
 
-    server.get('/alias/:address', async (req: express.Request, res: express.Response) => {
+    server.head('/alias/:username', async (req: express.Request, res: express.Response) => { 
+        const { username } = req.params     
+        try {
+            const a = await alias.findByUsername(username)
+            if (!a){
+                res.sendStatus(404)
+            } else {
+                res.sendStatus(200)
+            }
+        } catch (e){
+            res.status(500)
+            res.json(e.toString())
+        }
+    })
+
+    server.get('/alias/addresses/:addresses', async (req: express.Request, res: express.Response) => {
+        const { addresses } = req.params 
+        
+        try {
+            const a = await alias.pullByAddresses(JSON.parse(addresses))
+            res.status(200)
+            res.json(a.local().to().filterGroup('author').plain())
+        } catch (e){
+            res.status(500)
+            res.json(e.toString())
+        }
+    })
+
+
+
+    server.get('/alias/address/:address', async (req: express.Request, res: express.Response) => {
         const { address } = req.params     
         try {
             const a = await alias.quick().find({ address: address })
