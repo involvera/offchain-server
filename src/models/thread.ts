@@ -1,6 +1,6 @@
 import { Joi, Collection, Model } from 'elzeard'
 import { IContentLink, IKindLink } from '../routes/interfaces'
-import { BuildThreadPreviewString } from '../utils/embed'
+import { BuildThreadPreviewString } from 'involvera-content-embedding'
 import { AliasModel, IAuthor } from './alias'
 
 export class ThreadModel extends Model {

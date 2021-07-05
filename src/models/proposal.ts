@@ -1,6 +1,6 @@
 import { Joi, Collection, Model } from 'elzeard'
 import { IContentLink, IKindLink, IVote } from '../routes/interfaces'
-import { BuildProposalPreviewString, IEmbed } from '../utils/embed'
+import { BuildProposalPreviewString, IEmbed } from 'involvera-content-embedding'
 import { AliasModel, IAuthor } from './alias'
 import { ScriptEngine } from 'wallet-script'
 import { ToArrayBufferFromB64 } from 'wallet-util'
@@ -16,7 +16,7 @@ export class ProposalModel extends Model {
         signature: Joi.string().max(200).hex().required().group(['full']),
 
         index: Joi.number().required().group(['preview', 'view', 'full']),
-        title: Joi.string().max(140).required().group(['preview', 'view', 'full']),
+        title: Joi.string().max(120).required().group(['preview', 'view', 'full']),
         content: Joi.string().max(15000).required().group(['view', 'full']),
 
         content_link: Joi.string().required().group(['preview', 'view', 'full']),
