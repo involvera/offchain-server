@@ -6,7 +6,7 @@
     "public_key_hashed": "t.string('public_key_hashed', 40).notNullable()",
     "signature": "t.string('signature', 200).notNullable()",
     "index": "t.specificType('index', 'int').notNullable()",
-    "title": "t.string('title', 140).notNullable()",
+    "title": "t.string('title', 120).notNullable()",
     "content": "t.string('content', 15000).notNullable()",
     "content_link": "t.text('content_link').notNullable()",
     "vote": "t.text('vote').notNullable()",
