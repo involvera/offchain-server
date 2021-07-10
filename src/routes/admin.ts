@@ -23,7 +23,6 @@ export const CheckAdminKey = async (req: express.Request, res: express.Response,
     next()
 }
 
-
 export default (server: express.Express) => {
 
     server.post('/admin/:sid/reset', 

@@ -2,6 +2,8 @@ import { Joi, Collection, Model } from 'elzeard'
 import { IContentLink, IKindLink } from '../routes/interfaces'
 import { BuildThreadPreviewString } from 'involvera-content-embedding'
 import { AliasModel, IAuthor } from './alias'
+import { T_FETCHING_FILTER } from '../static/types'
+
 
 export class ThreadModel extends Model {
 
@@ -11,7 +13,7 @@ export class ThreadModel extends Model {
         author: Joi.string().max(39).foreignKey('aliases', 'address', 'author').group(['preview', 'view', 'full']),
 
         public_key: Joi.string().max(70).hex().required().group(['full']),
-        public_key_hashed: Joi.string().length(40).max(40).hex().required().group(['full']),
+        public_key_hashed: Joi.string().length(40).max(40).hex().required().group(['preview', 'view', 'full']),
         signature: Joi.string().max(200).hex().required().group(['full']),
 
         title: Joi.string().min(0).max(140).group(['preview', 'view', 'full']),
@@ -48,9 +50,9 @@ export class ThreadModel extends Model {
 
     prepareJSONRendering = () => this.setState({ content_link: this.get().contentLink() }, true)
 
-    renderJSON = () => {
+    renderJSON = (filter: T_FETCHING_FILTER)  => {
         this.prepareJSONRendering()
-        const json = this.to().filterGroup('author').plain()
+        const json = this.to().filterGroup(filter).plain()
         json.preview = this.get().preview()
         return json
     }
@@ -64,9 +66,9 @@ export class ThreadCollection extends Collection {
     fetchByPubK = async (public_key: string) => await this.quick().find({ public_key }) as ThreadModel
     pullBySID = async (sid: number, page: number) => await this.copy().sql().pull().where({sid}).orderBy('created_at', 'desc').offset(page * 10).limit((page+1) * 10).run() as ThreadCollection
 
-    renderJSON = (): any => {
+    renderJSON = (filter: T_FETCHING_FILTER): any => {
         return this.local().map((t: ThreadModel) => {
-            return t.renderJSON()
+            return t.renderJSON(filter)
         })
     }
 

@@ -4,6 +4,7 @@ import { BuildProposalPreviewString, IEmbed } from 'involvera-content-embedding'
 import { AliasModel, IAuthor } from './alias'
 import { ScriptEngine } from 'wallet-script'
 import { ToArrayBufferFromB64 } from 'wallet-util'
+import { T_FETCHING_FILTER } from '../static/types'
 
 export class ProposalModel extends Model {
     static schema = Joi.object({
@@ -12,7 +13,7 @@ export class ProposalModel extends Model {
         author: Joi.string().max(39).foreignKey('aliases', 'address', 'author').group(['view', 'full']),
 
         public_key: Joi.string().max(70).hex().required().group(['full']),
-        public_key_hashed: Joi.string().length(40).max(40).hex().required().group(['full']),
+        public_key_hashed: Joi.string().length(40).max(40).hex().required().group(['preview', 'view', 'full']),
         signature: Joi.string().max(200).hex().required().group(['full']),
 
         index: Joi.number().required().group(['preview', 'view', 'full']),
@@ -58,9 +59,9 @@ export class ProposalModel extends Model {
         }, true)
     }
 
-    renderJSON = () => {
+    renderJSON = (filter: T_FETCHING_FILTER) => {
         this.prepareJSONRendering()
-        const json = this.to().filterGroup('author').plain()
+        const json = this.to().filterGroup(filter).plain()
         json.preview = this.get().preview()
         return json
     }
@@ -76,11 +77,11 @@ export class ProposalCollection extends Collection {
     }
 
     fetchByPubK = async (public_key: string) => await this.quick().find({ public_key }) as ProposalModel
-    pullBySID = async (sid: number, page: number) => await this.copy().sql().pull().where({sid}).orderBy('created_at', 'desc').offset(page * 10).limit((page+1) * 10).run() as ProposalCollection
+    pullBySID = async (sid: number, page: number) => await this.copy().sql().pull().where({sid}).orderBy('created_at', 'desc').offset(page * 5).limit((page+1) * 5).run() as ProposalCollection
 
-    renderJSON = () => {
+    renderJSON = (filter: T_FETCHING_FILTER) => {
         return this.local().map((p: ProposalModel) => {
-            return p.renderJSON()
+            return p.renderJSON(filter)
         })
     }
 

@@ -5,7 +5,6 @@ import { ToPubKeyHash, GetAddressFromPubKeyHash, VerifySignatureHex, ToArrayBuff
 import { ScriptEngine } from 'wallet-script'
 import { IContentLink, IKindLink } from '../interfaces'
 
-
 export const CheckContent = (req: express.Request, res: express.Response, next: express.NextFunction) => { 
     const { content, content_link } = req.body
 

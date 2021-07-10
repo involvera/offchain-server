@@ -60,10 +60,10 @@ export default (server: express.Express) => {
     })
 
     server.get('/alias/addresses/:addresses', async (req: express.Request, res: express.Response) => {
-        const { addresses } = req.params 
-        
+        const addresses = JSON.parse(req.params.addresses)
+
         try {
-            const a = await alias.pullByAddresses(JSON.parse(addresses))
+            const a = await alias.pullByAddresses(addresses.slice(0, 100))
             res.status(200)
             res.json(a.local().to().filterGroup('author').plain())
         } catch (e){
@@ -71,8 +71,6 @@ export default (server: express.Express) => {
             res.json(e.toString())
         }
     })
-
-
 
     server.get('/alias/address/:address', async (req: express.Request, res: express.Response) => {
         const { address } = req.params     
