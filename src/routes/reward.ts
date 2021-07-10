@@ -54,6 +54,10 @@ export default (server: express.Express) => {
         CheckIfRewardAlreadyExists,
         GetAndAssignRewardLink,
         schemaValidator,
+        (req: express.Request, res: express.Response, next: express.NextFunction) => {
+            console.log(req.body)
+            next()
+        },
         postHandler(['sid', 'author', 'category', 'tx_id', 'vout', 'target_pkh'])
     )
 }

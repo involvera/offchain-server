@@ -32,3 +32,10 @@ export interface IRewardLink {
     category: number
     pubkh_origin: string
 }
+
+export interface ISocietyStats {
+    active_addresses: number
+    most_active_addresses: string[]
+    circulating_supply: string
+    circulating_vp_supply: string
+}
