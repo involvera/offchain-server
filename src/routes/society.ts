@@ -60,7 +60,13 @@ export default (server: express.Express) => {
                 try {
                     const aliases = await alias.pullByAddresses(stats.most_active_addresses)
                     stats.most_active_addresses = aliases.local().to().filterGroup('author').plain()
-                    res.json(Object.assign({}, s.to().plain(), {stats}))
+                    const o = {
+                        constitution: stats.constitution,
+                        costs: stats.costs
+                    }
+                    delete stats.constitution
+                    delete stats.costs
+                    res.json(Object.assign({}, s.to().plain(), {stats}, o))
                     res.status(200)
                     return
                 } catch (e){
