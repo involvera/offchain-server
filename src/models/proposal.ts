@@ -1,10 +1,11 @@
 import { Joi, Collection, Model } from 'elzeard'
-import { IContentLink, IKindLink, IVote } from '../routes/interfaces'
-import { BuildProposalPreviewString, IEmbed } from 'involvera-content-embedding'
-import { AliasModel, IAuthor } from './alias'
+import { IKindLink, IVote } from '../routes/interfaces'
+import { BuildProposalPreviewString,} from 'involvera-content-embedding'
+import { AliasModel } from './alias'
 import { ScriptEngine } from 'wallet-script'
 import { ToArrayBufferFromB64 } from 'wallet-util'
 import { T_FETCHING_FILTER } from '../static/types'
+import Knex from 'knex'
 
 export class ProposalModel extends Model {
     static schema = Joi.object({
@@ -22,6 +23,8 @@ export class ProposalModel extends Model {
 
         content_link: Joi.string().required().group(['preview', 'view', 'full']),
         vote: Joi.string().required().group(['preview', 'view', 'full']),
+        embed_list: Joi.string().group(['preview', 'view', 'full']),
+
         created_at: Joi.date().default('now').group(['preview', 'view', 'full'])
     })
 
@@ -34,6 +37,7 @@ export class ProposalModel extends Model {
             id: () => this.state.id, 
             sid: () => this.state.sid,
             title: (): string => this.state.title,
+            index: (): number => this.state.index,
             content: (): string => this.state.content,
             author: (): AliasModel => this.state.author,
             pubKH: (): string => this.state.public_key_hashed,
@@ -77,6 +81,14 @@ export class ProposalCollection extends Collection {
     }
 
     fetchByPubK = async (public_key: string) => await this.quick().find({ public_key }) as ProposalModel
+    fetchByIndex = async (sid: number, index: number) => await this.quick().find({sid, index}) as ProposalModel
+
+    pullByIndexes = async (sid: number, indexes: number[]) => {
+        return await this.copy().sql().pull().custom((q: Knex.QueryBuilder): any => {
+            q.where({sid}).whereIn('index', indexes)
+        }) as ProposalCollection
+    }
+
     pullBySID = async (sid: number, page: number) => await this.copy().sql().pull().where({sid}).orderBy('created_at', 'desc').offset(page * 5).limit((page+1) * 5).run() as ProposalCollection
 
     renderJSON = (filter: T_FETCHING_FILTER) => {
@@ -84,7 +96,6 @@ export class ProposalCollection extends Collection {
             return p.renderJSON(filter)
         })
     }
-
 }
 
 export default new ProposalCollection([], {table: 'proposals'})

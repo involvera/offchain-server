@@ -1,7 +1,7 @@
 import express from 'express'
 import { reward, SocietyModel } from '../models'
 import fetch from 'node-fetch'
-import { CheckIfSocietyExists } from './society'
+import { CheckIfSocietyExistsByBodyParam } from './society'
 import { IRewardLink } from './interfaces'
 import { ScriptEngine } from 'wallet-script'
 import { ToArrayBufferFromB64, GetAddressFromPubKeyHash } from 'wallet-util'
@@ -50,7 +50,7 @@ export default (server: express.Express) => {
     const { postHandler } = reward.expressTools().request()
 
     server.post('/reward',
-        CheckIfSocietyExists,
+        CheckIfSocietyExistsByBodyParam,
         CheckIfRewardAlreadyExists,
         GetAndAssignRewardLink,
         schemaValidator,

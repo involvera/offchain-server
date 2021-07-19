@@ -1,0 +1,15 @@
+{
+    "id": "t.increments('id').primary()",
+    "sid": "t.specificType('sid', 'int unsigned').references('id').inTable('societies').notNullable()",
+    "author": "t.string('author', 39).references('address').inTable('aliases').notNullable()",
+    "public_key": "t.string('public_key', 70).notNullable()",
+    "public_key_hashed": "t.string('public_key_hashed', 40).notNullable()",
+    "signature": "t.string('signature', 200).notNullable()",
+    "index": "t.specificType('index', 'int').notNullable()",
+    "title": "t.string('title', 120).notNullable()",
+    "content": "t.string('content', 15000).notNullable()",
+    "content_link": "t.text('content_link').notNullable()",
+    "vote": "t.text('vote').notNullable()",
+    "embed_list": "t.text('embed_list')",
+    "created_at": "t.dateTime('created_at').defaultTo(knex.raw('now()'))"
+}

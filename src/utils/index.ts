@@ -1,1 +1,1 @@
-export { bodyAssignator } from './express'
+export { bodyAssignator, ArrayObjToDoubleArray } from './express'

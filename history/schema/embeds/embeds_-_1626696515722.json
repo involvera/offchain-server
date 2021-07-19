@@ -1,0 +1,9 @@
+{
+    "id": "t.increments('id').primary()",
+    "created_at": "t.dateTime('created_at').defaultTo(knex.raw('now()'))",
+    "public_key_hashed": "t.string('public_key_hashed', 40)",
+    "index": "t.specificType('index', 'int unsigned')",
+    "type": "t.enum('type', ['proposal','thread']).notNullable()",
+    "sid": "t.specificType('sid', 'int unsigned').references('id').inTable('societies').notNullable()",
+    "content": "t.string('content', 1000)"
+}

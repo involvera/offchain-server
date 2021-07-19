@@ -5,7 +5,7 @@ import initProposal from './proposal/routes'
 import initThread from './thread/routes'
 import initAdmin from './admin'
 import initReward from './reward'
-
+import initEmbeds from './embed'
 
 export const initRoutes = (server: express.Express) => {
     initAlias(server)
@@ -14,4 +14,5 @@ export const initRoutes = (server: express.Express) => {
     initThread(server)
     initAdmin(server)
     initReward(server)
+    initEmbeds(server)
 }

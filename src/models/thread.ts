@@ -1,9 +1,9 @@
 import { Joi, Collection, Model } from 'elzeard'
-import { IContentLink, IKindLink } from '../routes/interfaces'
+import {  IKindLink } from '../routes/interfaces'
 import { BuildThreadPreviewString } from 'involvera-content-embedding'
-import { AliasModel, IAuthor } from './alias'
+import { AliasModel } from './alias'
 import { T_FETCHING_FILTER } from '../static/types'
-
+import Knex from 'knex'
 
 export class ThreadModel extends Model {
 
@@ -18,6 +18,7 @@ export class ThreadModel extends Model {
 
         title: Joi.string().min(0).max(140).group(['preview', 'view', 'full']),
         content: Joi.string().min(20).max(5000).required().group(['view', 'full']),
+        embed_list: Joi.string().group(['preview', 'view', 'full']),
 
         content_link: Joi.string().required().group(['preview', 'view', 'full']),
         created_at: Joi.date().default('now').group(['preview', 'view', 'full']),
@@ -64,15 +65,19 @@ export class ThreadCollection extends Collection {
     }
 
     fetchByPubK = async (public_key: string) => await this.quick().find({ public_key }) as ThreadModel
-    pullBySID = async (sid: number, page: number) => await this.copy().sql().pull().where({sid}).orderBy('created_at', 'desc').offset(page * 10).limit((page+1) * 10).run() as ThreadCollection
-
+    fetchByPubKH = async (sid: number, public_key_hashed: string) => await this.quick().find({ sid, public_key_hashed }) as ThreadModel
+ 
+    pullBySID = async (sid: number, page: number) => await this.copy().sql().pull().where({sid}).orderBy('created_at', 'desc').offset(page * 10).limit((page+1) * 10).run() as ThreadCollection    
+    pullByPubKHs = async (sid: number, pubkhs: string[]) => {
+        return await this.copy().sql().pull().custom((q: Knex.QueryBuilder): any => {
+            q.where({sid}).whereIn('public_key_hashed', pubkhs)
+        }) as ThreadCollection
+    }
     renderJSON = (filter: T_FETCHING_FILTER): any => {
         return this.local().map((t: ThreadModel) => {
             return t.renderJSON(filter)
         })
     }
-
-
 }
 
 export default new ThreadCollection([], {table: 'threads'})

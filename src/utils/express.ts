@@ -6,3 +6,10 @@ export const bodyAssignator = (callback: (request: Express.Request) => any) => {
         next()
     }
 }
+
+export const ArrayObjToDoubleArray = (a: any[], keys: string[]) => {
+    const ret: any[][] = []
+    for (let o of a)
+        ret.push(keys.map((key) => o[key]))
+    return ret
+}

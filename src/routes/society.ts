@@ -1,10 +1,9 @@
 import express from 'express'
-import { alias, AliasCollection, society, SocietyModel } from '../models' 
+import { alias, society, SocietyModel } from '../models' 
 import { CheckAdminKey } from './admin'
 import fetch from 'node-fetch'
 
-export const CheckIfSocietyExists = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    const { sid } = req.body 
+const getSocietyIfExists = async (sid: number, req: express.Request, res: express.Response, next: express.NextFunction) => {
     try {
         const s = await society.fetchByID(sid) 
         if (!s){
@@ -19,6 +18,12 @@ export const CheckIfSocietyExists = async (req: express.Request, res: express.Re
     }
 }
 
+export const CheckIfSocietyExistsByBodyParam = async (req: express.Request, res: express.Response, next: express.NextFunction) => await getSocietyIfExists(req.body.sid, req, res, next)
+export const CheckIfSocietyExistsByRouteParam = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    
+    await getSocietyIfExists(parseInt(req.params.sid), req, res, next)
+}
+
 export default (server: express.Express) => {
     const { schemaValidator } = society.expressTools().middleware()
     const { postHandler } = society.expressTools().request()
@@ -29,13 +34,13 @@ export default (server: express.Express) => {
         postHandler(['name', 'path_name', 'currency_route_api', 'currency_symbol', 'description', 'domain'])
     )
 
-    server.put('/society/:id', 
+    server.put('/society/:sid', 
     CheckAdminKey,
     schemaValidator,
+    CheckIfSocietyExistsByRouteParam,
     async (req: express.Request, res: express.Response) => {
-        const id = req.params.id        
+        const s = res.locals.society as SocietyModel
         try {
-            const s = await society.fetchByID(parseInt(id))
             await s.setState(req.body).saveToDB()
             res.status(200)
             res.json(s.to().plain())
@@ -45,14 +50,10 @@ export default (server: express.Express) => {
         }
     })
 
-    server.get('/society/:id',
+    server.get('/society/:sid',
+    CheckIfSocietyExistsByRouteParam,
     async (req: express.Request, res: express.Response) => {
-        const id = req.params.id
-        const s = await society.fetchByID(parseInt(id))
-        if (!s){
-            res.sendStatus(404)
-            return
-        }
+        const s = res.locals.society as SocietyModel
         try {
             const r = await fetch(s.get().currencyRouteAPI() + `/society/stats`)
             if (r.status == 200){
@@ -80,6 +81,4 @@ export default (server: express.Express) => {
             res.json(e.toString())
         }
     })
-
-
 }

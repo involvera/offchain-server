@@ -3,7 +3,7 @@ import { proposal }  from '../../models'
 import { bodyAssignator } from '../../utils'
 import { CheckIfProposalAlreadyRecorded, GetAndAssignLinkToProposal, CheckSignatureContent, CheckContent, CheckIfAliasExist } from './middleware'
 import { GetProposalList } from './methods'
-import { CheckIfSocietyExists } from '../society'
+import { CheckIfSocietyExistsByBodyParam } from '../society'
 
 export default (server: express.Express) => { 
 
@@ -11,17 +11,21 @@ export default (server: express.Express) => {
     const { postHandler } = proposal.expressTools().request()
 
     server.post('/proposal', 
-    bodyAssignator((req: express.Request) => {
-        return {  content_link: '_', vote: '_', index: 0, author: '1111111111111111111111111111111111', public_key_hashed: '0000000000000000000000000000000000000000' }
-    }),
-    CheckSignatureContent,
-    CheckIfSocietyExists,
-    CheckIfProposalAlreadyRecorded,
-    GetAndAssignLinkToProposal,
-    CheckContent,
-    schemaValidator,
-    CheckIfAliasExist,
-    postHandler(['content', 'title', 'public_key', 'signature', 'content_link', 'vote', 'index', 'author', 'public_key_hashed', 'sid'], 'author'))
+        bodyAssignator((req: express.Request) => {
+            return {  content_link: '_', vote: '_', index: 0, author: '1111111111111111111111111111111111', public_key_hashed: '0000000000000000000000000000000000000000' }
+        }),
+        CheckSignatureContent,
+        CheckIfSocietyExistsByBodyParam,
+        CheckIfProposalAlreadyRecorded,
+        GetAndAssignLinkToProposal,
+        CheckContent,
+        schemaValidator,
+        CheckIfAliasExist,
+        (req: express.Request, res: express.Response, next: express.NextFunction) => {
+                        
+        },
+        postHandler(['content', 'title', 'public_key', 'signature', 'content_link', 'vote', 'index', 'author', 'public_key_hashed', 'sid'], 'author')
+    )
 
     server.get('/proposal/:sid', GetProposalList)
 
