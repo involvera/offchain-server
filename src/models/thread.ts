@@ -1,9 +1,11 @@
 import { Joi, Collection, Model } from 'elzeard'
 import {  IKindLink } from '../routes/interfaces'
-import { BuildThreadPreviewString } from 'involvera-content-embedding'
+import { BuildThreadPreviewString, ParseEmbedInText } from 'involvera-content-embedding'
 import { AliasModel } from './alias'
 import { T_FETCHING_FILTER } from '../static/types'
 import Knex from 'knex'
+import { UUIDToPubKeyHashHex } from 'wallet-util'
+import embed from './embed'
 
 export class ThreadModel extends Model {
 
@@ -18,7 +20,6 @@ export class ThreadModel extends Model {
 
         title: Joi.string().min(0).max(140).group(['preview', 'view', 'full']),
         content: Joi.string().min(20).max(5000).required().group(['view', 'full']),
-        embed_list: Joi.string().group(['preview', 'view', 'full']),
 
         content_link: Joi.string().required().group(['preview', 'view', 'full']),
         created_at: Joi.date().default('now').group(['preview', 'view', 'full']),
@@ -28,11 +29,27 @@ export class ThreadModel extends Model {
         super(initialState, ThreadModel, options)
     }
 
+    toEmbedData = () => {
+        return {
+            public_key_hashed: this.get().pubKH(),
+            index: -1,
+            type: "thread",
+            content: this.get().preview().embed_code,
+            sid: this.get().sid()
+        }
+    }
+
     get = () => {
         return {
             preview: () => {
                 const link = this.get().contentLink()
                 return BuildThreadPreviewString(this.get().pubKH(), this.get().author().to().plain(), this.get().createdAt(), !link.target_content ? null : link.target_content, this.get().title(), this.get().content())
+            },
+            embeds: async () => {
+                const es = ParseEmbedInText(this.get().content())
+                const pkhs = es.filter((e) => e.uuid != '').map((e) => UUIDToPubKeyHashHex(e.uuid))
+                const indexes = es.filter((e) => e.index != -1).map((e) => e.index)
+                return await embed.pullByIndexesOrPKHs(this.get().sid(), indexes, pkhs)
             },
             title: (): string => this.state.title,
             content: (): string => this.state.content,
@@ -51,10 +68,16 @@ export class ThreadModel extends Model {
 
     prepareJSONRendering = () => this.setState({ content_link: this.get().contentLink() }, true)
 
-    renderJSON = (filter: T_FETCHING_FILTER)  => {
+    renderJSON = async (filter: T_FETCHING_FILTER)  => {
+        let embeds = []
+        if (filter != 'preview'){
+            const list = await this.get().embeds()
+            embeds = list.local().to().plain()
+        }
         this.prepareJSONRendering()
         const json = this.to().filterGroup(filter).plain()
         json.preview = this.get().preview()
+        json.embeds = embeds
         return json
     }
 }
@@ -74,9 +97,9 @@ export class ThreadCollection extends Collection {
         }) as ThreadCollection
     }
     renderJSON = (filter: T_FETCHING_FILTER): any => {
-        return this.local().map((t: ThreadModel) => {
-            return t.renderJSON(filter)
-        })
+        return Promise.all(this.local().map(async (t: ThreadModel) => {
+            return await t.renderJSON(filter)
+        }))
     }
 }
 

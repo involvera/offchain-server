@@ -28,6 +28,17 @@ export class EmbedModel extends Model {
     constructor(initialState: any, options: any){
         super(initialState, EmbedModel, options)
     }
+
+    get = () => {
+        return {
+            id: (): number => this.state.id,
+            content: (): string => this.state.content,
+            type: (): TEmbedType => this.state.type,
+            index: (): number | -1 => this.state.index,
+            pubKH: (): string | null => this.state.public_key_hashed,
+            createdAt: (): Date => this.state.created_at
+        }
+    }
 }
 
 export class EmbedCollection extends Collection {
@@ -36,15 +47,7 @@ export class EmbedCollection extends Collection {
     }
 
     create = () => {
-        const thread = async (t: ThreadModel) => {
-            return await this.copy().quick().create({
-                public_key_hashed: t.get().pubKH(),
-                index: -1,
-                type: "thread",
-                content: t.get().preview().embed_code,
-                sid: t.get().sid()
-            }) as EmbedModel
-        }
+        const thread = async (t: ThreadModel) => await this.copy().quick().create(t.toEmbedData()) as EmbedModel
 
         const proposal = async (p: ProposalModel) => {
             return await this.copy().quick().create({
@@ -61,6 +64,13 @@ export class EmbedCollection extends Collection {
 
     fetchByPKH = async (sid: number, public_key_hashed: string) => await this.quick().find({sid, public_key_hashed}) as EmbedModel
     fetchByIndex = async (sid: number, index: number) => await this.quick().find({sid, index}) as EmbedModel
+
+
+    pullByIndexesOrPKHs = async (sid: number, indexes: number[], pkhs: string[]) => {
+        return await this.copy().sql().pull().custom((q: Knex.QueryBuilder): any => {
+            q.where({sid}).whereIn('index', indexes).orWhereIn('public_key_hashed', pkhs)
+        }) as EmbedCollection
+    }
 
     pullByIndexes = async (sid: number, indexes: number[]) => {
         return await this.copy().sql().pull().custom((q: Knex.QueryBuilder): any => {

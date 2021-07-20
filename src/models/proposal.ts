@@ -1,17 +1,20 @@
 import { Joi, Collection, Model } from 'elzeard'
 import { IKindLink, IVote } from '../routes/interfaces'
-import { BuildProposalPreviewString,} from 'involvera-content-embedding'
+import { BuildProposalPreviewString, ParseEmbedInText} from 'involvera-content-embedding'
 import { AliasModel } from './alias'
 import { ScriptEngine } from 'wallet-script'
-import { ToArrayBufferFromB64 } from 'wallet-util'
+import { ToArrayBufferFromB64, UUIDToPubKeyHashHex } from 'wallet-util'
 import { T_FETCHING_FILTER } from '../static/types'
 import Knex from 'knex'
+import embed, { EmbedCollection } from './embed'
 
 export class ProposalModel extends Model {
+
+
     static schema = Joi.object({
         id: Joi.number().autoIncrement().primaryKey().group(['full']),
         sid: Joi.number().foreignKey('societies', 'id').noPopulate().required().group(['preview', 'view', 'full']),
-        author: Joi.string().max(39).foreignKey('aliases', 'address', 'author').group(['view', 'full']),
+        author: Joi.string().max(39).foreignKey('aliases', 'address', 'author').group(['preview', 'view', 'full']),
 
         public_key: Joi.string().max(70).hex().required().group(['full']),
         public_key_hashed: Joi.string().length(40).max(40).hex().required().group(['preview', 'view', 'full']),
@@ -23,16 +26,31 @@ export class ProposalModel extends Model {
 
         content_link: Joi.string().required().group(['preview', 'view', 'full']),
         vote: Joi.string().required().group(['preview', 'view', 'full']),
-        embed_list: Joi.string().group(['preview', 'view', 'full']),
 
         created_at: Joi.date().default('now').group(['preview', 'view', 'full'])
     })
+
+    toEmbedData = () => {
+        return {
+            public_key_hashed: null as string,
+            index: this.get().index(),
+            type: "proposal",
+            content: this.get().preview().embed_code,
+            sid: this.get().sid()
+        }
+    }
 
     get = () => {
         return {
             preview: () => {
                 const link = this.get().contentLink()
                 return BuildProposalPreviewString(this.get().pubKH(), new ScriptEngine(ToArrayBufferFromB64(link.output.script)).proposalContentTypeString(), this.get().createdAt(), this.get().vote(), this.get().title())
+            },
+            embeds: async () => {
+                const es = ParseEmbedInText(this.get().content())
+                const pkhs = es.filter((e) => e.uuid != '').map((e) => UUIDToPubKeyHashHex(e.uuid))
+                const indexes = es.filter((e) => e.index != -1).map((e) => e.index)
+                return await embed.pullByIndexesOrPKHs(this.get().sid(), indexes, pkhs)
             },
             id: () => this.state.id, 
             sid: () => this.state.sid,
@@ -63,10 +81,16 @@ export class ProposalModel extends Model {
         }, true)
     }
 
-    renderJSON = (filter: T_FETCHING_FILTER) => {
+    renderJSON = async (filter: T_FETCHING_FILTER) => {
+        let embeds = []
+        if (filter != 'preview'){
+            const list = await this.get().embeds()
+            embeds = list.local().to().plain()
+        }
         this.prepareJSONRendering()
         const json = this.to().filterGroup(filter).plain()
         json.preview = this.get().preview()
+        json.embeds = embeds
         return json
     }
 
@@ -92,9 +116,9 @@ export class ProposalCollection extends Collection {
     pullBySID = async (sid: number, page: number) => await this.copy().sql().pull().where({sid}).orderBy('created_at', 'desc').offset(page * 5).limit((page+1) * 5).run() as ProposalCollection
 
     renderJSON = (filter: T_FETCHING_FILTER) => {
-        return this.local().map((p: ProposalModel) => {
-            return p.renderJSON(filter)
-        })
+        return Promise.all(this.local().map(async (p: ProposalModel) => {
+            return await p.renderJSON(filter)
+        }))
     }
 }
 

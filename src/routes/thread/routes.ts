@@ -3,7 +3,7 @@ import { thread } from '../../models'
 import { bodyAssignator } from '../../utils'
 import { CheckSignatureContent, CheckIfAliasExist } from '../proposal/middleware'
 import { GetAndAssignLinkToThread, CheckIfThreadAlreadyRecorded } from './middleware'
-import { GetThreadList} from './method'
+import { GetThread, GetThreadList} from './method'
 import { CheckIfSocietyExistsByBodyParam } from '../society'
 
 export default (server: express.Express) => { 
@@ -24,5 +24,6 @@ export default (server: express.Express) => {
     )
 
     server.get('/thread/:sid', GetThreadList)
+    server.get('/thread/:sid/:pubkh', GetThread)
 
 }

@@ -1,5 +1,5 @@
 import express from 'express'
-import {proposal, alias, SocietyModel } from '../../models'
+import {proposal, alias, SocietyModel, embed, ProposalModel } from '../../models'
 import fetch from 'node-fetch'
 import { ToPubKeyHash, GetAddressFromPubKeyHash, VerifySignatureHex, ToArrayBufferFromB64 } from 'wallet-util'
 import { ScriptEngine } from 'wallet-script'
@@ -87,6 +87,30 @@ export const CheckIfAliasExist = async (req: express.Request, res: express.Respo
         res.status(404)
         res.json({error: "You need to create an alias on your address before adding content."})
         return
+    }
+    next()
+}
+
+export const BuildEmbed = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const { content, sid, index } = req.body
+    const e = await embed.fetchByIndex(parseInt(sid), parseInt(index))
+    const p = new ProposalModel(req.body,{})
+    if (e){
+        try {
+            await e.setState({
+                content: p.get().preview().embed_code
+            }).saveToDB()
+        } catch(err){
+            res.status(500)
+            res.json(err.toString())
+        }
+    } else {
+        try {
+            await embed.create().proposal(p)
+        } catch (err){
+            res.status(500)
+            res.json(err.toString())
+        }
     }
     next()
 }
