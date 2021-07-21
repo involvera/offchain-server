@@ -1,8 +1,11 @@
 import { Joi, Collection, Model } from 'elzeard'
-import { TEmbedType } from 'involvera-content-embedding';
+import { ParseEmbedInText, TEmbedType } from 'involvera-content-embedding';
 import { ProposalModel } from './proposal';
 import { ThreadModel } from './thread';
 import Knex from 'knex'
+import { ArrayObjToDoubleArray, MixArraysToArrayObj } from '../utils/express';
+import society, { SocietyModel } from './society';
+import { UUIDToPubKeyHashHex } from 'wallet-util';
 
 export interface IEmbed {
     content: string
@@ -42,6 +45,37 @@ export class EmbedModel extends Model {
 }
 
 export class EmbedCollection extends Collection {
+    
+    static FetchEmbeds = async (origin: ProposalModel | ThreadModel): Promise<EmbedCollection> => {
+        const es = ParseEmbedInText(origin.get().content())
+        if (es.length == 0)
+            return embed.new([]) as EmbedCollection
+
+        const societiesName = es.filter((e) => e.society != '').map((e) => e.society)
+        try {
+            const currentSociety = await society.fetchByID(origin.get().sid())
+            currentSociety && societiesName.push(currentSociety.get().pathName())
+        } catch(e){
+            throw e;
+        }
+        const societies = await society.pullByPathName(societiesName)
+        const embeds = []
+        for (const e of es){
+            !e.society && embeds.push(Object.assign({}, e, {society: origin.get().sid()}))
+            if (e.society){
+                const s = societies.local().find({path_name: e.society}) as SocietyModel
+                s && embeds.push(Object.assign({}, e, {society: s.get().ID() }))
+            }
+        }
+
+        return await embed.pullByIndexesOrPKHs(
+            embeds.filter((e) => e.index != -1).map((e) => e.society),
+            embeds.filter((e) => e.index != -1).map((e) => e.index),
+            embeds.filter((e) => e.uuid != '').map((e) => e.society),
+            embeds.filter((e) => e.uuid != '').map((e) => UUIDToPubKeyHashHex(e.uuid))
+        )
+    }
+    
     constructor(initialState: any, options: any){
         super(initialState, [EmbedModel, EmbedCollection], options)
     }
@@ -66,21 +100,16 @@ export class EmbedCollection extends Collection {
     fetchByIndex = async (sid: number, index: number) => await this.quick().find({sid, index}) as EmbedModel
 
 
-    pullByIndexesOrPKHs = async (sid: number, indexes: number[], pkhs: string[]) => {
+    pullByIndexesOrPKHs = async (sidIDX: number[], indexes: number[], sidPKH: number[], pkhs: string[]) => {
+        const SET_SID_IDX = ['sid', 'index']
+        const SET_SID_PKH = ['sid', 'public_key_hashed']
+        
+        const arrSidIdx = MixArraysToArrayObj(SET_SID_IDX, sidIDX, indexes)
+        const arrSidPkh = MixArraysToArrayObj(SET_SID_PKH, sidPKH, pkhs)
+        
         return await this.copy().sql().pull().custom((q: Knex.QueryBuilder): any => {
-            q.where({sid}).whereIn('index', indexes).orWhereIn('public_key_hashed', pkhs)
-        }) as EmbedCollection
-    }
-
-    pullByIndexes = async (sid: number, indexes: number[]) => {
-        return await this.copy().sql().pull().custom((q: Knex.QueryBuilder): any => {
-            q.where({sid}).whereIn('index', indexes)
-        }) as EmbedCollection
-    }
-
-    pullByPKHs = async (sid: number, pkhs: string[]) => {
-        return await this.copy().sql().pull().custom((q: Knex.QueryBuilder): any => {
-            q.where({sid}).whereIn('public_key_hashed', pkhs)
+            q.whereIn(SET_SID_IDX, ArrayObjToDoubleArray(arrSidIdx, SET_SID_IDX)).
+            orWhereIn(SET_SID_PKH, ArrayObjToDoubleArray(arrSidPkh, SET_SID_PKH))
         }) as EmbedCollection
     }
 
@@ -88,4 +117,5 @@ export class EmbedCollection extends Collection {
 }
 
 
-export default new EmbedCollection([], {table: 'embeds'})
+const embed = new EmbedCollection([], {table: 'embeds'})
+export default embed

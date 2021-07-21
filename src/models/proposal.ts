@@ -1,3 +1,4 @@
+import _ from 'lodash'
 import { Joi, Collection, Model } from 'elzeard'
 import { IKindLink, IVote } from '../routes/interfaces'
 import { BuildProposalPreviewString, ParseEmbedInText} from 'involvera-content-embedding'
@@ -7,6 +8,7 @@ import { ToArrayBufferFromB64, UUIDToPubKeyHashHex } from 'wallet-util'
 import { T_FETCHING_FILTER } from '../static/types'
 import Knex from 'knex'
 import embed, { EmbedCollection } from './embed'
+import society, { SocietyModel } from './society'
 
 export class ProposalModel extends Model {
 
@@ -46,14 +48,9 @@ export class ProposalModel extends Model {
                 const link = this.get().contentLink()
                 return BuildProposalPreviewString(this.get().pubKH(), new ScriptEngine(ToArrayBufferFromB64(link.output.script)).proposalContentTypeString(), this.get().createdAt(), this.get().vote(), this.get().title())
             },
-            embeds: async () => {
-                const es = ParseEmbedInText(this.get().content())
-                const pkhs = es.filter((e) => e.uuid != '').map((e) => UUIDToPubKeyHashHex(e.uuid))
-                const indexes = es.filter((e) => e.index != -1).map((e) => e.index)
-                return await embed.pullByIndexesOrPKHs(this.get().sid(), indexes, pkhs)
-            },
-            id: () => this.state.id, 
-            sid: () => this.state.sid,
+            embeds: () => EmbedCollection.FetchEmbeds(this),
+            id: (): number => this.state.id, 
+            sid: (): number => this.state.sid,
             title: (): string => this.state.title,
             index: (): number => this.state.index,
             content: (): string => this.state.content,

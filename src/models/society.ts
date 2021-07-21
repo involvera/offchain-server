@@ -21,6 +21,7 @@ export class SocietyModel extends Model {
         return {
             ID: (): number => this.state.id,
             name: (): string => this.state.name,
+            pathName: (): string => this.state.path_name,
             currencyRouteAPI: (): string => this.state.currency_route_api,
             currencySymbol: (): string => this.state.currency_symbol,
             description: (): string => this.state.description,
@@ -36,6 +37,8 @@ export class SocietyCollection extends Collection {
     }
 
     fetchByID = async (id: number) => await this.quick().find({id}) as SocietyModel
+
+    pullByPathName = async (pathName: string[]) => await this.copy().sql().pull().whereIn('path_name', pathName).run() as SocietyCollection
 }
 
 

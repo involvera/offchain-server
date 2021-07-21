@@ -5,7 +5,7 @@ import { AliasModel } from './alias'
 import { T_FETCHING_FILTER } from '../static/types'
 import Knex from 'knex'
 import { UUIDToPubKeyHashHex } from 'wallet-util'
-import embed from './embed'
+import embed, { EmbedCollection } from './embed'
 
 export class ThreadModel extends Model {
 
@@ -45,12 +45,7 @@ export class ThreadModel extends Model {
                 const link = this.get().contentLink()
                 return BuildThreadPreviewString(this.get().pubKH(), this.get().author().to().plain(), this.get().createdAt(), !link.target_content ? null : link.target_content, this.get().title(), this.get().content())
             },
-            embeds: async () => {
-                const es = ParseEmbedInText(this.get().content())
-                const pkhs = es.filter((e) => e.uuid != '').map((e) => UUIDToPubKeyHashHex(e.uuid))
-                const indexes = es.filter((e) => e.index != -1).map((e) => e.index)
-                return await embed.pullByIndexesOrPKHs(this.get().sid(), indexes, pkhs)
-            },
+            embeds: () => EmbedCollection.FetchEmbeds(this),
             title: (): string => this.state.title,
             content: (): string => this.state.content,
             author: (): AliasModel => this.state.author,
