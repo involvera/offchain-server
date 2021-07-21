@@ -1,10 +1,11 @@
 import express from 'express'
 import { thread } from '../../models'
 import { bodyAssignator } from '../../utils'
-import { CheckSignatureContent, CheckIfAliasExist } from '../proposal/middleware'
-import { GetAndAssignLinkToThread, CheckIfThreadAlreadyRecorded } from './middleware'
+import { CheckSignatureContent } from '../proposal/middleware'
+import { GetAndAssignLinkToThread, CheckIfThreadAlreadyRecorded, BuildEmbed } from './middleware'
 import { GetThread, GetThreadList} from './method'
 import { CheckIfSocietyExistsByBodyParam } from '../society'
+import { CheckIfAliasExist } from '../alias'
 
 export default (server: express.Express) => { 
 
@@ -20,6 +21,7 @@ export default (server: express.Express) => {
         CheckIfThreadAlreadyRecorded,
         GetAndAssignLinkToThread,
         CheckIfAliasExist,
+        BuildEmbed,
         postHandler(['content', 'title', 'public_key', 'signature', 'content_link', 'author', 'public_key_hashed', 'sid'], 'author')
     )
 

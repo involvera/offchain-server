@@ -1,9 +1,10 @@
 import express from 'express'
 import { proposal }  from '../../models'
 import { bodyAssignator } from '../../utils'
-import { CheckIfProposalAlreadyRecorded, GetAndAssignLinkToProposal, CheckSignatureContent, CheckContent, CheckIfAliasExist, BuildEmbed } from './middleware'
+import { CheckIfProposalAlreadyRecorded, GetAndAssignLinkToProposal, CheckSignatureContent, CheckContent, BuildEmbed } from './middleware'
 import { GetProposalList, GetProposal } from './methods'
 import { CheckIfSocietyExistsByBodyParam } from '../society'
+import { CheckIfAliasExist } from '../alias'
 
 export default (server: express.Express) => { 
 

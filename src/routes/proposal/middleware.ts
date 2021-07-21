@@ -79,17 +79,6 @@ export const GetAndAssignLinkToProposal = async (req: express.Request, res: expr
     }
 }
 
-export const CheckIfAliasExist = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    const { author } = req.body
-
-    const a = await alias.findByAddress(author)
-    if (!a){
-        res.status(404)
-        res.json({error: "You need to create an alias on your address before adding content."})
-        return
-    }
-    next()
-}
 
 export const BuildEmbed = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const { content, sid, index } = req.body
@@ -97,9 +86,7 @@ export const BuildEmbed = async (req: express.Request, res: express.Response, ne
     const p = new ProposalModel(req.body,{})
     if (e){
         try {
-            await e.setState({
-                content: p.get().preview().embed_code
-            }).saveToDB()
+            await e.setState({ content: p.get().preview().embed_code }).saveToDB()
         } catch(err){
             res.status(500)
             res.json(err.toString())

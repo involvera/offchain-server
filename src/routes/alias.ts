@@ -3,6 +3,20 @@ import { ToPubKeyHash, GetAddressFromPubKeyHash, VerifySignatureHex } from 'wall
 import { alias } from '../models' 
 import { bodyAssignator} from '../utils'
 
+export const CheckIfAliasExist = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const { author } = req.body
+
+    const a = await alias.findByAddress(author)
+    if (!a){
+        res.status(404)
+        res.json({error: "You need to create an alias on your address before adding content."})
+        return
+    }
+    res.locals.alias = a
+    next()
+}
+
+
 export const checkSignatureOnUsername = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const { signature, public_key } = req.headers
     const { username } = req.body

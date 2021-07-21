@@ -1,7 +1,7 @@
 import express from 'express'
 import fetch from 'node-fetch'
 import { ToPubKeyHash, GetAddressFromPubKeyHash } from 'wallet-util'
-import { thread, SocietyModel } from '../../models'
+import { thread, SocietyModel, embed, ThreadModel, AliasModel } from '../../models'
 import { IContentLink } from '../interfaces'
 
 export const GetAndAssignLinkToThread = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -42,4 +42,28 @@ export const CheckIfThreadAlreadyRecorded = async (req: express.Request, res: ex
     res.status(401)
     res.json({error: `Thread is already recorded.`})
     return
+}
+
+export const BuildEmbed = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const { public_key, sid } = req.body
+    const e = await embed.fetchByPKH(parseInt(sid), ToPubKeyHash(Buffer.from(public_key, 'hex')).toString('hex'))
+    const t = new ThreadModel(req.body, {}).setState({ author: res.locals.alias }, true)
+
+    if (e){
+        try {
+            await e.setState({ content: t.get().preview().embed_code }).saveToDB()
+        } catch(err){
+            res.status(500)
+            res.json(err.toString())
+        }
+    } else {
+        try {
+            await embed.create().thread(t)
+        } catch (err){
+            console.log(err)
+            res.status(500)
+            res.json(err.toString())
+        }
+    }
+    next()
 }

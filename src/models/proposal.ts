@@ -41,14 +41,17 @@ export class ProposalModel extends Model {
             sid: this.get().sid()
         }
     }
-
+    
     get = () => {
         return {
             preview: () => {
                 const link = this.get().contentLink()
-                return BuildProposalPreviewString(this.get().pubKH(), new ScriptEngine(ToArrayBufferFromB64(link.output.script)).proposalContentTypeString(), this.get().createdAt(), this.get().vote(), this.get().title())
+                return BuildProposalPreviewString(this.get().index(), new ScriptEngine(ToArrayBufferFromB64(link.output.script)).proposalContentTypeString(), this.get().createdAt(), this.get().vote(), this.get().title(), this.get().sid())
             },
-            embeds: () => EmbedCollection.FetchEmbeds(this),
+            embeds: async () => {
+                const list = await EmbedCollection.FetchEmbeds(this)
+                return list.local().to().filterGroup('preview').plain().map((c: any) => c.content) as string[]
+            },
             id: (): number => this.state.id, 
             sid: (): number => this.state.sid,
             title: (): string => this.state.title,
@@ -79,14 +82,11 @@ export class ProposalModel extends Model {
     }
 
     renderJSON = async (filter: T_FETCHING_FILTER) => {
-        let embeds = []
-        if (filter != 'preview'){
-            const list = await this.get().embeds()
-            embeds = list.local().to().plain()
-        }
+        let embeds: string[] = []
+        if (filter != 'preview')
+            embeds = await this.get().embeds()
         this.prepareJSONRendering()
         const json = this.to().filterGroup(filter).plain()
-        json.preview = this.get().preview()
         json.embeds = embeds
         return json
     }

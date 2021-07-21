@@ -43,9 +43,12 @@ export class ThreadModel extends Model {
         return {
             preview: () => {
                 const link = this.get().contentLink()
-                return BuildThreadPreviewString(this.get().pubKH(), this.get().author().to().plain(), this.get().createdAt(), !link.target_content ? null : link.target_content, this.get().title(), this.get().content())
+                return BuildThreadPreviewString(this.get().pubKH(), this.get().author().to().plain(), this.get().createdAt(), !link.target_content ? null : link.target_content, this.get().title(), this.get().content(), this.get().sid())
             },
-            embeds: () => EmbedCollection.FetchEmbeds(this),
+            embeds: async () => {
+                const list = await EmbedCollection.FetchEmbeds(this)
+                return list.local().to().filterGroup('preview').plain().map((c: any) => c.content) as string[]
+            },
             title: (): string => this.state.title,
             content: (): string => this.state.content,
             author: (): AliasModel => this.state.author,
@@ -64,14 +67,11 @@ export class ThreadModel extends Model {
     prepareJSONRendering = () => this.setState({ content_link: this.get().contentLink() }, true)
 
     renderJSON = async (filter: T_FETCHING_FILTER)  => {
-        let embeds = []
-        if (filter != 'preview'){
-            const list = await this.get().embeds()
-            embeds = list.local().to().plain()
-        }
+        let embeds: string[] = []
+        if (filter != 'preview')
+            embeds = await this.get().embeds()
         this.prepareJSONRendering()
         const json = this.to().filterGroup(filter).plain()
-        json.preview = this.get().preview()
         json.embeds = embeds
         return json
     }

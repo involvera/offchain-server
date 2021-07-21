@@ -1,5 +1,5 @@
 import express from 'express'
-import { alias, proposal, society, SocietyModel, thread, reward } from '../models'
+import { alias, proposal, society, SocietyModel, thread, reward, embed } from '../models'
 import { ADMIN_KEY, IS_PRODUCTION } from '../static'
 
 
@@ -37,6 +37,7 @@ export default (server: express.Express) => {
                 await thread.quick().remove({sid: s.get().ID() })
                 await proposal.quick().remove({sid: s.get().ID() })
                 await alias.sql().remove().all()
+                await embed.quick().remove({sid: s.get().ID() })
                 res.sendStatus(200)
                 return
             }

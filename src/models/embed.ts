@@ -1,11 +1,13 @@
+import _ from 'lodash'
 import { Joi, Collection, Model } from 'elzeard'
+import Knex from 'knex'
 import { ParseEmbedInText, TEmbedType } from 'involvera-content-embedding';
+import { UUIDToPubKeyHashHex } from 'wallet-util';
+
 import { ProposalModel } from './proposal';
 import { ThreadModel } from './thread';
-import Knex from 'knex'
 import { ArrayObjToDoubleArray, MixArraysToArrayObj } from '../utils/express';
-import society, { SocietyModel } from './society';
-import { UUIDToPubKeyHashHex } from 'wallet-util';
+import society, { SocietyCollection, SocietyModel } from './society';
 
 export interface IEmbed {
     content: string
@@ -22,10 +24,10 @@ export class EmbedModel extends Model {
         id: Joi.number().autoIncrement().primaryKey(),
         created_at: Joi.date().default('now'),
         public_key_hashed: Joi.string().min(0).max(40).hex(),
-        index: Joi.number().positive().max(2_000_000_000), 
+        index: Joi.number().max(2_000_000_000), 
         type: Joi.string().allow('proposal', 'thread').required(),
         sid: Joi.number().foreignKey('societies', 'id').noPopulate().required(),
-        content: Joi.string().max(1000)
+        content: Joi.string().max(1000).group(['preview'])
     })
 
     constructor(initialState: any, options: any){
@@ -44,22 +46,31 @@ export class EmbedModel extends Model {
     }
 }
 
+
+const SET_SID_IDX = ['sid', 'index']
+const SET_SID_PKH = ['sid', 'public_key_hashed']
+
 export class EmbedCollection extends Collection {
     
     static FetchEmbeds = async (origin: ProposalModel | ThreadModel): Promise<EmbedCollection> => {
         const es = ParseEmbedInText(origin.get().content())
         if (es.length == 0)
-            return embed.new([]) as EmbedCollection
+            return embedTable.new([]) as EmbedCollection
 
-        const societiesName = es.filter((e) => e.society != '').map((e) => e.society)
+        const societiesName = _.uniq(es.filter((e) => !!e.society).map((e) => e.society))
+        let currentSociety = society.newNode({}) as SocietyModel
+        let societies = society.new([]) as SocietyCollection
         try {
-            const currentSociety = await society.fetchByID(origin.get().sid())
-            currentSociety && societiesName.push(currentSociety.get().pathName())
+            currentSociety = await society.fetchByID(origin.get().sid())
         } catch(e){
             throw e;
         }
-        const societies = await society.pullByPathName(societiesName)
-        const embeds = []
+        _.remove(societiesName, currentSociety.get().pathName())
+        if (societiesName.length > 0){
+            societies = await society.pullByPathName(societiesName)
+        }
+        societies.local().push(currentSociety)
+        let embeds = []
         for (const e of es){
             !e.society && embeds.push(Object.assign({}, e, {society: origin.get().sid()}))
             if (e.society){
@@ -67,12 +78,12 @@ export class EmbedCollection extends Collection {
                 s && embeds.push(Object.assign({}, e, {society: s.get().ID() }))
             }
         }
-
-        return await embed.pullByIndexesOrPKHs(
-            embeds.filter((e) => e.index != -1).map((e) => e.society),
-            embeds.filter((e) => e.index != -1).map((e) => e.index),
-            embeds.filter((e) => e.uuid != '').map((e) => e.society),
-            embeds.filter((e) => e.uuid != '').map((e) => UUIDToPubKeyHashHex(e.uuid))
+        embeds = _.uniqWith(embeds, _.isEqual)
+        return await embedTable.pullByIndexesOrPKHs(
+            embeds.filter((e) => e.index > 0).map((e) => e.society),
+            embeds.filter((e) => e.index > 0).map((e) => e.index),
+            embeds.filter((e) => e.uuid).map((e) => e.society),
+            embeds.filter((e) => e.uuid).map((e) => UUIDToPubKeyHashHex(e.uuid))
         )
     }
     
@@ -82,16 +93,7 @@ export class EmbedCollection extends Collection {
 
     create = () => {
         const thread = async (t: ThreadModel) => await this.copy().quick().create(t.toEmbedData()) as EmbedModel
-
-        const proposal = async (p: ProposalModel) => {
-            return await this.copy().quick().create({
-                public_key_hashed: null,
-                index: p.get().index(),
-                type: "proposal",
-                content: p.get().preview().embed_code,
-                sid: p.get().sid()
-            }) as EmbedModel
-        }
+        const proposal = async (p: ProposalModel) => await this.copy().quick().create(p.toEmbedData()) as EmbedModel
 
         return { thread, proposal }
     }
@@ -101,21 +103,45 @@ export class EmbedCollection extends Collection {
 
 
     pullByIndexesOrPKHs = async (sidIDX: number[], indexes: number[], sidPKH: number[], pkhs: string[]) => {
-        const SET_SID_IDX = ['sid', 'index']
-        const SET_SID_PKH = ['sid', 'public_key_hashed']
-        
         const arrSidIdx = MixArraysToArrayObj(SET_SID_IDX, sidIDX, indexes)
         const arrSidPkh = MixArraysToArrayObj(SET_SID_PKH, sidPKH, pkhs)
+        if (sidIDX.length != indexes.length)
+            throw new Error("sid and index arrays don't have the same length")
+        if (sidPKH.length != pkhs.length)
+            throw new Error("sid and pkhs arrays don't have the same length")
+    
+        if (sidIDX.length > 0 && sidPKH.length > 0){
+            return await this.copy().sql().pull().custom((q: Knex.QueryBuilder): any => {
+                q.whereIn(SET_SID_IDX, ArrayObjToDoubleArray(arrSidIdx, SET_SID_IDX)).
+                orWhereIn(SET_SID_PKH, ArrayObjToDoubleArray(arrSidPkh, SET_SID_PKH))
+            }) as EmbedCollection
+        }
+
+        if (sidPKH.length > 0)
+            return this.pullBySidsAndPKHs(sidPKH, pkhs)
+        if (sidIDX.length > 0)
+            return this.pullBySidsAndIndexes(sidIDX, indexes)
         
-        return await this.copy().sql().pull().custom((q: Knex.QueryBuilder): any => {
-            q.whereIn(SET_SID_IDX, ArrayObjToDoubleArray(arrSidIdx, SET_SID_IDX)).
-            orWhereIn(SET_SID_PKH, ArrayObjToDoubleArray(arrSidPkh, SET_SID_PKH))
-        }) as EmbedCollection
+        return this.new([]) as EmbedCollection
     }
 
-    pullByIDs = async (list: number[]) => await this.copy().quick().pull('id', list).run() as EmbedCollection
+    pullBySidsAndIndexes = async (sids: number[], indexes: number[]) => {
+        if (sids.length != indexes.length)
+            throw new Error("sid and index arrays don't have the same length")
+        const arr = MixArraysToArrayObj(SET_SID_IDX, sids, indexes)
+        return await this.copy().sql().pull().whereIn(SET_SID_IDX, ArrayObjToDoubleArray(arr, SET_SID_IDX)).run() as EmbedCollection        
+    }
+
+    pullBySidsAndPKHs = async (sids: number[], pkhs: string[]) => {
+        if (sids.length != pkhs.length)
+            throw new Error("sid and pkhs arrays don't have the same length")
+        const arr = MixArraysToArrayObj(SET_SID_PKH, sids, pkhs)
+        return  await this.copy().sql().pull().whereIn(SET_SID_PKH, ArrayObjToDoubleArray(arr, SET_SID_PKH)).run() as EmbedCollection        
+    }
+
+    pullByIDs = async (ids: number[]) => await this.copy().quick().pull('id', ids).run() as EmbedCollection
 }
 
 
-const embed = new EmbedCollection([], {table: 'embeds'})
-export default embed
+const embedTable = new EmbedCollection([], {table: 'embeds'})
+export default embedTable
