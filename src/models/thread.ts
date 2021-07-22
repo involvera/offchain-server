@@ -1,11 +1,10 @@
 import { Joi, Collection, Model } from 'elzeard'
 import {  IKindLink } from '../routes/interfaces'
-import { BuildThreadPreviewString, ParseEmbedInText } from 'involvera-content-embedding'
+import { BuildThreadPreviewString } from 'involvera-content-embedding'
 import { AliasModel } from './alias'
 import { T_FETCHING_FILTER } from '../static/types'
 import Knex from 'knex'
-import { UUIDToPubKeyHashHex } from 'wallet-util'
-import embed, { EmbedCollection } from './embed'
+import { EmbedCollection } from './embed'
 
 export class ThreadModel extends Model {
 
@@ -43,7 +42,7 @@ export class ThreadModel extends Model {
         return {
             preview: () => {
                 const link = this.get().contentLink()
-                return BuildThreadPreviewString(this.get().pubKH(), this.get().author().to().plain(), this.get().createdAt(), !link.target_content ? null : link.target_content, this.get().title(), this.get().content(), this.get().sid())
+                return BuildThreadPreviewString(this.get().pubKH(), this.get().author().to().filterGroup('author').string(), this.get().createdAt(), !link.target_content ? null : link.target_content, this.get().title(), this.get().content(), this.get().sid())
             },
             embeds: async () => {
                 const list = await EmbedCollection.FetchEmbeds(this)
@@ -72,6 +71,8 @@ export class ThreadModel extends Model {
             embeds = await this.get().embeds()
         this.prepareJSONRendering()
         const json = this.to().filterGroup(filter).plain()
+        if (filter == 'preview')
+            json.preview = this.get().preview()
         json.embeds = embeds
         return json
     }
@@ -88,7 +89,7 @@ export class ThreadCollection extends Collection {
     pullBySID = async (sid: number, page: number) => await this.copy().sql().pull().where({sid}).orderBy('created_at', 'desc').offset(page * 10).limit((page+1) * 10).run() as ThreadCollection    
     pullByPubKHs = async (sid: number, pubkhs: string[]) => {
         return await this.copy().sql().pull().custom((q: Knex.QueryBuilder): any => {
-            q.where({sid}).whereIn('public_key_hashed', pubkhs)
+            return q.where({sid}).whereIn('public_key_hashed', pubkhs)
         }) as ThreadCollection
     }
     renderJSON = (filter: T_FETCHING_FILTER): any => {

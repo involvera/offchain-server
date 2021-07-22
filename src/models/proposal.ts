@@ -1,14 +1,13 @@
 import _ from 'lodash'
 import { Joi, Collection, Model } from 'elzeard'
 import { IKindLink, IVote } from '../routes/interfaces'
-import { BuildProposalPreviewString, ParseEmbedInText} from 'involvera-content-embedding'
+import { BuildProposalPreviewString} from 'involvera-content-embedding'
 import { AliasModel } from './alias'
 import { ScriptEngine } from 'wallet-script'
-import { ToArrayBufferFromB64, UUIDToPubKeyHashHex } from 'wallet-util'
+import { ToArrayBufferFromB64 } from 'wallet-util'
 import { T_FETCHING_FILTER } from '../static/types'
 import Knex from 'knex'
-import embed, { EmbedCollection } from './embed'
-import society, { SocietyModel } from './society'
+import { EmbedCollection } from './embed'
 
 export class ProposalModel extends Model {
 
@@ -88,6 +87,7 @@ export class ProposalModel extends Model {
         this.prepareJSONRendering()
         const json = this.to().filterGroup(filter).plain()
         json.embeds = embeds
+        
         return json
     }
 
@@ -106,7 +106,7 @@ export class ProposalCollection extends Collection {
 
     pullByIndexes = async (sid: number, indexes: number[]) => {
         return await this.copy().sql().pull().custom((q: Knex.QueryBuilder): any => {
-            q.where({sid}).whereIn('index', indexes)
+            return q.where({sid}).whereIn('index', indexes)
         }) as ProposalCollection
     }
 

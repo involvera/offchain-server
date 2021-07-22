@@ -22,15 +22,14 @@ export const MixArraysToArrayObj = (keys: string[], ...arrays: any[]): any[] => 
             throw new Error("arrays are not all equal")           
     }
 
-    const ret = new Array(refLength.length)
+    const ret = new Array(refLength)
     _.fill(ret, {})
     for (let i = 0; i < keys.length; i++){
         const key = keys[i]
         for (let j = 0; j < arrays[i].length; j++){
-            ret[j][key] = arrays[i][j] 
+            ret[j] = Object.assign({}, ret[j], {[key]: arrays[i][j]})
         }
     }
-
     return ret
 }
 

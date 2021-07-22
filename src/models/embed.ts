@@ -2,7 +2,6 @@ import _ from 'lodash'
 import { Joi, Collection, Model } from 'elzeard'
 import Knex from 'knex'
 import { ParseEmbedInText, TEmbedType } from 'involvera-content-embedding';
-import { UUIDToPubKeyHashHex } from 'wallet-util';
 
 import { ProposalModel } from './proposal';
 import { ThreadModel } from './thread';
@@ -56,7 +55,6 @@ export class EmbedCollection extends Collection {
         const es = ParseEmbedInText(origin.get().content())
         if (es.length == 0)
             return embedTable.new([]) as EmbedCollection
-
         const societiesName = _.uniq(es.filter((e) => !!e.society).map((e) => e.society))
         let currentSociety = society.newNode({}) as SocietyModel
         let societies = society.new([]) as SocietyCollection
@@ -66,9 +64,9 @@ export class EmbedCollection extends Collection {
             throw e;
         }
         _.remove(societiesName, currentSociety.get().pathName())
-        if (societiesName.length > 0){
+        if (societiesName.length > 0)
             societies = await society.pullByPathName(societiesName)
-        }
+
         societies.local().push(currentSociety)
         let embeds = []
         for (const e of es){
@@ -80,10 +78,10 @@ export class EmbedCollection extends Collection {
         }
         embeds = _.uniqWith(embeds, _.isEqual)
         return await embedTable.pullByIndexesOrPKHs(
-            embeds.filter((e) => e.index > 0).map((e) => e.society),
-            embeds.filter((e) => e.index > 0).map((e) => e.index),
-            embeds.filter((e) => e.uuid).map((e) => e.society),
-            embeds.filter((e) => e.uuid).map((e) => UUIDToPubKeyHashHex(e.uuid))
+            embeds.filter((e) => e.type === 'proposal').map((e) => e.society),
+            embeds.filter((e) => e.type === 'proposal').map((e) => e.index),
+            embeds.filter((e) => e.type === 'thread').map((e) => e.society),
+            embeds.filter((e) => e.type === 'thread').map((e) => e.pkh)
         )
     }
     
@@ -101,22 +99,19 @@ export class EmbedCollection extends Collection {
     fetchByPKH = async (sid: number, public_key_hashed: string) => await this.quick().find({sid, public_key_hashed}) as EmbedModel
     fetchByIndex = async (sid: number, index: number) => await this.quick().find({sid, index}) as EmbedModel
 
-
     pullByIndexesOrPKHs = async (sidIDX: number[], indexes: number[], sidPKH: number[], pkhs: string[]) => {
-        const arrSidIdx = MixArraysToArrayObj(SET_SID_IDX, sidIDX, indexes)
-        const arrSidPkh = MixArraysToArrayObj(SET_SID_PKH, sidPKH, pkhs)
         if (sidIDX.length != indexes.length)
             throw new Error("sid and index arrays don't have the same length")
         if (sidPKH.length != pkhs.length)
             throw new Error("sid and pkhs arrays don't have the same length")
-    
         if (sidIDX.length > 0 && sidPKH.length > 0){
+            const arrSidIdx = MixArraysToArrayObj(SET_SID_IDX, sidIDX, indexes)
+            const arrSidPkh = MixArraysToArrayObj(SET_SID_PKH, sidPKH, pkhs)
             return await this.copy().sql().pull().custom((q: Knex.QueryBuilder): any => {
-                q.whereIn(SET_SID_IDX, ArrayObjToDoubleArray(arrSidIdx, SET_SID_IDX)).
-                orWhereIn(SET_SID_PKH, ArrayObjToDoubleArray(arrSidPkh, SET_SID_PKH))
+                return q.whereIn(SET_SID_IDX, ArrayObjToDoubleArray(arrSidIdx, SET_SID_IDX))
+                .or.whereIn(SET_SID_PKH, ArrayObjToDoubleArray(arrSidPkh, SET_SID_PKH))
             }) as EmbedCollection
         }
-
         if (sidPKH.length > 0)
             return this.pullBySidsAndPKHs(sidPKH, pkhs)
         if (sidIDX.length > 0)
