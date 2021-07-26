@@ -4,7 +4,7 @@ import { bodyAssignator } from '../../utils'
 import { CheckSignatureContent } from '../proposal/middleware'
 import { GetAndAssignLinkToThread, CheckIfThreadAlreadyRecorded, BuildEmbed } from './middleware'
 import { GetThread, GetThreadList} from './method'
-import { CheckIfSocietyExistsByBodyParam } from '../society'
+import { CheckIfLughHeightHasChanged, CheckIfSocietyExistsByBodyParam } from '../society'
 import { CheckIfAliasExist } from '../alias'
 
 export default (server: express.Express) => { 
@@ -21,6 +21,7 @@ export default (server: express.Express) => {
         CheckIfThreadAlreadyRecorded,
         GetAndAssignLinkToThread,
         CheckIfAliasExist,
+        CheckIfLughHeightHasChanged,
         BuildEmbed,
         postHandler(['content', 'title', 'public_key', 'signature', 'content_link', 'author', 'public_key_hashed', 'sid'], 'author')
     )

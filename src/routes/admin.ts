@@ -1,7 +1,7 @@
 import express from 'express'
 import { alias, proposal, society, SocietyModel, thread, reward, embed } from '../models'
 import { ADMIN_KEY, IS_PRODUCTION } from '../static'
-
+import { init } from '../init'
 
 export const CheckIsDevelopment = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (IS_PRODUCTION){
@@ -24,7 +24,6 @@ export const CheckAdminKey = async (req: express.Request, res: express.Response,
 }
 
 export default (server: express.Express) => {
-
     server.post('/admin/:sid/reset', 
     CheckAdminKey,
     CheckIsDevelopment,
@@ -38,6 +37,7 @@ export default (server: express.Express) => {
                 await proposal.quick().remove({sid: s.get().ID() })
                 await alias.sql().remove().all()
                 await embed.quick().remove({sid: s.get().ID() })
+                await init()
                 res.sendStatus(200)
                 return
             }

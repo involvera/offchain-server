@@ -1,7 +1,7 @@
 import express from 'express'
-import { alias, society, SocietyModel } from '../models' 
+import { alias, cachedSocieties, society, SocietyModel } from '../models' 
 import { CheckAdminKey } from './admin'
-import fetch from 'node-fetch'
+import { IContentLink } from './interfaces'
 
 const getSocietyIfExists = async (sid: number, req: express.Request, res: express.Response, next: express.NextFunction) => {
     try {
@@ -19,9 +19,25 @@ const getSocietyIfExists = async (sid: number, req: express.Request, res: expres
 }
 
 export const CheckIfSocietyExistsByBodyParam = async (req: express.Request, res: express.Response, next: express.NextFunction) => await getSocietyIfExists(req.body.sid, req, res, next)
-export const CheckIfSocietyExistsByRouteParam = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    
-    await getSocietyIfExists(parseInt(req.params.sid), req, res, next)
+export const CheckIfSocietyExistsByRouteParam = async (req: express.Request, res: express.Response, next: express.NextFunction) => await getSocietyIfExists(parseInt(req.params.sid), req, res, next)
+export const CheckIfLughHeightHasChanged = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const { content_link, lugh_height } = req.body
+    const s = res.locals.society as SocietyModel
+    const so = cachedSocieties.local().find({id: s.get().ID()}) as SocietyModel
+    let b = false
+    if (!!lugh_height){
+        if (so.get().stats().stats.last_height < lugh_height)
+            b = true
+    }
+    if (!!content_link){
+        if ((content_link as IContentLink).link.lh < lugh_height)
+            b = true
+    }
+    if (b){
+        await so.fetchMembers()
+        await so.fetchStats()
+    }
+    next()
 }
 
 export default (server: express.Express) => {
@@ -55,27 +71,11 @@ export default (server: express.Express) => {
     async (req: express.Request, res: express.Response) => {
         const s = res.locals.society as SocietyModel
         try {
-            const r = await fetch(s.get().currencyRouteAPI() + `/society/stats`)
-            if (r.status == 200){
-                const stats = await r.json()
-                try {
-                    const aliases = await alias.pullByAddresses(stats.most_active_addresses)
-                    stats.most_active_addresses = aliases.local().to().filterGroup('author').plain()
-                    const o = {
-                        constitution: stats.constitution,
-                        costs: stats.costs
-                    }
-                    delete stats.constitution
-                    delete stats.costs
-                    res.json(Object.assign({}, s.to().plain(), {stats}, o))
-                    res.status(200)
-                    return
-                } catch (e){
-                    res.status(500)
-                    res.json(e.toString())
-                    return
-                }
-            }
+            const list = await s.fetchStats()
+            const aliases = await alias.pullByAddresses(list.stats.most_active_addresses)
+            list.stats.most_active_addresses = aliases.local().to().filterGroup('author').plain()
+            res.status(200)
+            res.json(list)
         } catch (e){
             res.status(500)
             res.json(e.toString())

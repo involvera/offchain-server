@@ -26,6 +26,7 @@ export interface IContentLink {
 }
 
 export interface IRewardLink {
+    lugh_height: number
     tx_id: string
     vout: number
     output: IOutput

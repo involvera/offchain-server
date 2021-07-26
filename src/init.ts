@@ -2,6 +2,12 @@ import express from 'express'
 import formData from 'express-form-data'
 import morgan from 'morgan'
 import { config } from 'elzeard'
+import { cachedSocieties } from './models'
+
+export const init = async () => {
+  await cachedSocieties.pullAll();
+  await cachedSocieties.fetchMembersFromAll();
+}
 
 export const initServer = async () => {
     const server = express()
@@ -24,6 +30,8 @@ export const initServer = async () => {
     })
     config.setCriticalCode('082376')
 
+
     await config.done()
+    await init()
     return server
 }

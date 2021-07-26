@@ -1,10 +1,11 @@
 import express from 'express'
-import { reward, SocietyModel } from '../models'
+import { cachedSocieties, reward, SocietyModel } from '../models'
 import fetch from 'node-fetch'
-import { CheckIfSocietyExistsByBodyParam } from './society'
+import { CheckIfLughHeightHasChanged, CheckIfSocietyExistsByBodyParam } from './society'
 import { IRewardLink } from './interfaces'
 import { ScriptEngine } from 'wallet-script'
 import { ToArrayBufferFromB64, GetAddressFromPubKeyHash } from 'wallet-util'
+import { MemberModel } from '../models/member'
 
 export const GetAndAssignRewardLink = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const { tx_id, vout } = req.body
@@ -15,6 +16,7 @@ export const GetAndAssignRewardLink = async (req: express.Request, res: express.
         if (r.status == 200){
             const json = await r.json() as IRewardLink
             req.body = Object.assign(req.body, {
+                lugh_height: json.lugh_height,
                 author: GetAddressFromPubKeyHash(Buffer.from(json.pubkh_origin, 'hex')),
                 category: json.category,
                 target_pkh: new ScriptEngine(ToArrayBufferFromB64(json.output.script)).parse().targetPKHFromContentScript().toString('hex')
@@ -45,6 +47,18 @@ export const CheckIfRewardAlreadyExists = async (req: express.Request, res: expr
     next()
 }
 
+export const getAndAssignReputation = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const { author } = req.body
+    const s = res.locals.society as SocietyModel
+
+    const node = cachedSocieties.local().find({ id: s.get().ID() }) as SocietyModel
+    const m = node.get().members().find({ addr: author }) as MemberModel
+    req.body = Object.assign(req.body, {
+        reputation: m ? m.get().votePower() : 0
+    })
+    next()
+}
+
 export default (server: express.Express) => {
     const { schemaValidator } = reward.expressTools().middleware()
     const { postHandler } = reward.expressTools().request()
@@ -53,7 +67,9 @@ export default (server: express.Express) => {
         CheckIfSocietyExistsByBodyParam,
         CheckIfRewardAlreadyExists,
         GetAndAssignRewardLink,
+        getAndAssignReputation,
+        CheckIfLughHeightHasChanged,
         schemaValidator,
-        postHandler(['sid', 'author', 'category', 'tx_id', 'vout', 'target_pkh'])
+        postHandler(['sid', 'author', 'category', 'tx_id', 'vout', 'target_pkh', 'reputation', 'lugh_height'])
     )
 }
