@@ -33,6 +33,7 @@ export interface ISocietyStats {
     active_addresses: number
     most_active_addresses: string[],
     circulating_supply: string
+    total_contributor: number
     circulating_vp_supply: string
 }
 
@@ -44,11 +45,16 @@ export interface ISociety {
     description: string
     domain: string,
     currency_route_api: string
-    stats: ISocietyStats,
+    stats: ISocietyStats
     costs: ICost
     constitution: IConstitutionData
 }
 
+export interface IContributorStats { 
+    addr: string
+    position: number
+    sid: number
+}
 
 export class SocietyModel extends Model {
 
@@ -69,6 +75,13 @@ export class SocietyModel extends Model {
     constructor(initialState: any, options: any){
         super(initialState, SocietyModel, options)
     }
+
+    fetchContributorStats = (addr: string): IContributorStats | null => {
+        const index = this.get().members().findIndex({ addr })
+        if (index > -1)
+            return { sid: this.get().ID(), addr, position: index + 1 }
+        return { sid: this.get().ID(), addr, position: this.get().members().count() }
+    } 
 
     fetchStats = async () => {
         const r = await fetch(this.get().currencyRouteAPI() + `/society/stats`)

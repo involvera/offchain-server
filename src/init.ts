@@ -17,7 +17,7 @@ export const initServer = async () => {
 
     server.use(function(req, res, next) {
       res.header("Access-Control-Allow-Origin", "*");
-      res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, signature, public_key, admin_key, Access-Control-Allow-Origin, page, filter");
+      res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, signature, public_key, admin_key, Access-Control-Allow-Origin, page, filter, sid");
       next();
     });
 

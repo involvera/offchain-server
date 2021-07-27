@@ -3,7 +3,7 @@ import { proposal }  from '../../models'
 import { bodyAssignator } from '../../utils'
 import { CheckIfProposalAlreadyRecorded, GetAndAssignLinkToProposal, CheckSignatureContent, CheckContent, BuildEmbed } from './middleware'
 import { GetProposalList, GetProposal } from './methods'
-import { CheckIfLughHeightHasChanged, CheckIfSocietyExistsByBodyParam } from '../society'
+import { CheckIfSocietyExistsByBodyParam } from '../society'
 import { CheckIfAliasExist } from '../alias'
 
 export default (server: express.Express) => { 
@@ -22,7 +22,6 @@ export default (server: express.Express) => {
         CheckContent,
         schemaValidator,
         CheckIfAliasExist,
-        CheckIfLughHeightHasChanged,
         BuildEmbed,
         postHandler(['content', 'title', 'public_key', 'signature', 'content_link', 'vote', 'index', 'author', 'public_key_hashed', 'sid'], 'author')
     )

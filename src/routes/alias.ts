@@ -16,7 +16,6 @@ export const CheckIfAliasExist = async (req: express.Request, res: express.Respo
     next()
 }
 
-
 export const checkSignatureOnUsername = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const { signature, public_key } = req.headers
     const { username } = req.body

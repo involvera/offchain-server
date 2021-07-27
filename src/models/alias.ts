@@ -22,12 +22,11 @@ export class AliasModel extends Model {
     
     get = () => {
         return {
-            ID: () => this.state.id,
-            address: () => this.state.address,
-            ppURI: () => this.state.pp,
-            sid: () => this.state.sid,
-            username: () => this.state.username,
-            createdAt: () => this.state.created_at,
+            ID: (): number => this.state.id,
+            address: (): string => this.state.address,
+            ppURI: (): string | null => this.state.pp,
+            username: (): string => this.state.username,
+            createdAt: (): Date => this.state.created_at,
         }
     }
 }
