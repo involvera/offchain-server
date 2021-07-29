@@ -1,7 +1,8 @@
 import { Joi, Collection, Model } from 'elzeard'
-import { Constant } from 'wallet-script'
 import { AliasModel } from './alias'
 
+export type TRewardCategory = "upvote" | "reward_0" | "reward_1" | "reward_2"
+export const REWARD_CATEGORIES: TRewardCategory[] = ["upvote", "reward_0", "reward_1", "reward_2"]
 
 export class RewardModel extends Model {
 
@@ -11,7 +12,7 @@ export class RewardModel extends Model {
         lugh_height: Joi.number().positive().integer().max(2_000_000_000).required(),
         author: Joi.string().foreignKey('aliases', 'address', 'author').group(['view', 'full']),
         reputation: Joi.number().double().min(0).default(0).required().group(['full']) ,
-        category: Joi.string().allow("upvote", "reward_0", "reward_1", "reward_2").required().group(['preview', 'view', 'full']),
+        category: Joi.string().allow('upvote', 'reward_0', 'reward_1', 'reward_2').required().group(['preview', 'view', 'full']),
         tx_id: Joi.string().length(64).max(64).hex().required().group(['full']),
         vout: Joi.number().min(0).max(100).required().group(['full']).default(0),
         target_pkh: Joi.string().length(40).max(40).hex().required().group(['preview', 'view', 'full']),
@@ -28,7 +29,7 @@ export class RewardModel extends Model {
             sid: (): number => this.state.sid,
             author: (): AliasModel => this.state.author,
             reputation: (): number => this.state.reputation,
-            category: (): "upvote" | "reward_0" | "reward_1" | "reward_2" => this.state.category,
+            category: (): TRewardCategory => this.state.category,
             txID: (): string => this.state.tx_id,
             vout: (): number => this.state.vout,
             targetPKH: (): string => this.state.target_pkh,

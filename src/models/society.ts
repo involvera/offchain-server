@@ -2,6 +2,7 @@ import { Joi, Collection, Model } from 'elzeard'
 import { MemberList } from './member'
 import fetch from 'node-fetch'
 import { Constitution as C } from 'wallet-script'
+import reward from './reward'
 
 export interface ICost {
     thread: number
@@ -76,7 +77,7 @@ export class SocietyModel extends Model {
         super(initialState, SocietyModel, options)
     }
 
-    fetchContributorStats = (addr: string): IContributorStats | null => {
+    fetchContributorStats = (addr: string): IContributorStats  => {
         const index = this.get().members().findIndex({ addr })
         if (index > -1)
             return { sid: this.get().ID(), addr, position: index + 1 }

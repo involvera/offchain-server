@@ -23,7 +23,7 @@ export default (server: express.Express) => {
         schemaValidator,
         CheckIfAliasExist,
         BuildEmbed,
-        postHandler(['content', 'title', 'public_key', 'signature', 'content_link', 'vote', 'index', 'author', 'public_key_hashed', 'sid'], 'author')
+        postHandler(['content', 'title', 'public_key', 'signature', 'content_link', 'vote', 'index', 'author', 'public_key_hashed', 'sid', 'lugh_height'], 'author')
     )
 
     server.get('/proposal/:sid/:index', GetProposal)

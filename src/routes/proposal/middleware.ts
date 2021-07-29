@@ -63,6 +63,7 @@ export const GetAndAssignLinkToProposal = async (req: express.Request, res: expr
                 author: GetAddressFromPubKeyHash(Buffer.from(json.pubkh_origin, 'hex')),
                 vote: JSON.stringify(json.vote),
                 content_link: JSON.stringify(json.link),
+                lugh_height: json.link.lh,
                 public_key_hashed, 
                 index: json.index
             })

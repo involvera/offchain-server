@@ -10,13 +10,12 @@ import Knex from 'knex'
 import { EmbedCollection } from './embed'
 
 export class ProposalModel extends Model {
-
-
     static schema = Joi.object({
         id: Joi.number().autoIncrement().primaryKey().group(['full']),
         sid: Joi.number().foreignKey('societies', 'id').noPopulate().required().group(['preview', 'view', 'full']),
         author: Joi.string().max(39).foreignKey('aliases', 'address', 'author').group(['preview', 'view', 'full']),
 
+        lugh_height: Joi.number().positive().integer().max(2_000_000_000).required().group(['full']),
         public_key: Joi.string().max(70).hex().required().group(['full']),
         public_key_hashed: Joi.string().length(40).max(40).hex().required().group(['preview', 'view', 'full']),
         signature: Joi.string().max(200).hex().required().group(['full']),

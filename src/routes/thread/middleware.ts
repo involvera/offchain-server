@@ -16,6 +16,7 @@ export const GetAndAssignLinkToThread = async (req: express.Request, res: expres
             req.body = Object.assign(req.body, {
                 author: GetAddressFromPubKeyHash(Buffer.from(json.pubkh_origin, 'hex')),
                 public_key_hashed,
+                lugh_height: json.link.lh,
                 content_link: JSON.stringify(json.link),
             })
             next()

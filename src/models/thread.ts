@@ -5,6 +5,15 @@ import { AliasModel } from './alias'
 import { T_FETCHING_FILTER } from '../static/types'
 import Knex from 'knex'
 import { EmbedCollection } from './embed'
+import { reward } from './'
+import { REWARD_CATEGORIES } from './reward'
+
+interface IRewardCount {
+    n_upvote: number
+    n_reward_0: number
+    n_reward_1: number
+    n_reward_2: number
+}
 
 export class ThreadModel extends Model {
 
@@ -13,6 +22,7 @@ export class ThreadModel extends Model {
         sid: Joi.number().foreignKey('societies', 'id').noPopulate().required().group(['preview', 'view', 'full']),
         author: Joi.string().max(39).foreignKey('aliases', 'address', 'author').group(['preview', 'view', 'full']),
 
+        lugh_height: Joi.number().positive().integer().max(2_000_000_000).required().group(['full']),
         public_key: Joi.string().max(70).hex().required().group(['full']),
         public_key_hashed: Joi.string().length(40).max(40).hex().required().group(['preview', 'view', 'full']),
         signature: Joi.string().max(200).hex().required().group(['full']),
@@ -36,6 +46,21 @@ export class ThreadModel extends Model {
             content: this.get().preview().embed_code,
             sid: this.get().sid()
         }
+    }
+
+    getRewards = async () => {
+        const res = await this.sql().knex().raw(`
+            SELECT
+                sum(case when category = ? then 1 else 0 end) AS n_upvote,
+                sum(case when category = ? then 1 else 0 end) AS n_reward_0,
+                sum(case when category = ? then 1 else 0 end) AS n_reward_1,
+                sum(case when category = ? then 1 else 0 end) AS n_reward_2
+            FROM
+                ${reward.sql().table().name()}
+            WHERE 
+                target_pkh=?
+        `, (REWARD_CATEGORIES as string[]).concat([this.get().pubKH()]))
+        return res[0][0] as IRewardCount
     }
 
     get = () => {
@@ -72,7 +97,8 @@ export class ThreadModel extends Model {
         this.prepareJSONRendering()
         const json = this.to().filterGroup(filter).plain()
         if (filter == 'preview')
-            json.preview = this.get().preview()
+            json.preview = this.get().preview().embed_code
+        json.rewards = await this.getRewards()
         json.embeds = embeds
         return json
     }
@@ -81,6 +107,11 @@ export class ThreadModel extends Model {
 export class ThreadCollection extends Collection {
     constructor(initialState: any, options: any){
         super(initialState, [ThreadModel, ThreadCollection], options)
+    }
+
+    getRewards = async () => {
+        const rewardTable = reward.sql().table().name()
+        const res = await this.sql().knex().from(rewardTable).select('category', 'target_pkh').whereIn('target_pkh', this.local().map((t: ThreadModel) => t.get().pubKH() ))
     }
 
     fetchByPubK = async (public_key: string) => await this.quick().find({ public_key }) as ThreadModel
@@ -92,6 +123,8 @@ export class ThreadCollection extends Collection {
             return q.where({sid}).whereIn('public_key_hashed', pubkhs)
         }) as ThreadCollection
     }
+    
+    //Improve this method to execute only ONE getRewards request to pull all the rewards count at once.
     renderJSON = (filter: T_FETCHING_FILTER): any => {
         return Promise.all(this.local().map(async (t: ThreadModel) => {
             return await t.renderJSON(filter)

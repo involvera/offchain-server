@@ -12,9 +12,8 @@ export default (server: express.Express) => {
     const { schemaValidator } = thread.expressTools().middleware()
     const { postHandler } = thread.expressTools().request()
 
-
     server.post('/thread', 
-        bodyAssignator(() => { return { content_link: '_', author: '1111111111111111111111111111111111', public_key_hashed: "0000000000000000000000000000000000000000" } }),
+        bodyAssignator(() => { return { content_link: '_', author: '1111111111111111111111111111111111', public_key_hashed: "0000000000000000000000000000000000000000", lugh_height: 1 } }),
         schemaValidator,
         CheckSignatureContent,
         CheckIfSocietyExistsByBodyParam,
@@ -23,7 +22,7 @@ export default (server: express.Express) => {
         CheckIfAliasExist,
         CheckIfLughHeightHasChanged,
         BuildEmbed,
-        postHandler(['content', 'title', 'public_key', 'signature', 'content_link', 'author', 'public_key_hashed', 'sid'], 'author')
+        postHandler(['content', 'title', 'public_key', 'signature', 'content_link', 'author', 'public_key_hashed', 'sid', 'lugh_height'], 'author')
     )
 
     server.get('/thread/:sid', GetThreadList)
