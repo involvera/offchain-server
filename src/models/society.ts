@@ -70,6 +70,7 @@ export class SocietyModel extends Model {
         currency_symbol: Joi.string().min(2).max(5).alphanum().required().example('cInv'),
         description: Joi.string().max(140).trim().replace(/\n/g, '').replace(/\s\s+/g, ' ').example('A community platform that hierarchize members with decentralized governance based on a liquid economy.'),
         domain: Joi.string().hostname().example('involvera.com'),
+        pp: Joi.string().max(255),
         created_at: Joi.date().default('now'),
     })
 

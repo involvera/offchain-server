@@ -27,7 +27,9 @@ export class ProposalModel extends Model {
         content_link: Joi.string().required().group(['preview', 'view', 'full']),
         vote: Joi.string().required().group(['preview', 'view', 'full']),
 
-        created_at: Joi.date().default('now').group(['preview', 'view', 'full'])
+        created_at: Joi.date().default('now').group(['preview', 'view', 'full']),
+        end_at: Joi.date().group(['preview', 'view', 'full'])
+
     })
 
     toEmbedData = () => {
