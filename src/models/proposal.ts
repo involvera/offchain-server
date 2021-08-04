@@ -105,6 +105,8 @@ export class ProposalCollection extends Collection {
     fetchByPubK = async (public_key: string) => await this.quick().find({ public_key }) as ProposalModel
     fetchByIndex = async (sid: number, index: number) => await this.quick().find({sid, index}) as ProposalModel
 
+    pullByPubKHs = async (pubkhs: string[]) => await this.ctx().sql().pull().whereIn('public_key_hashed', pubkhs).run()
+
     pullByIndexes = async (sid: number, indexes: number[]) => {
         return await this.copy().sql().pull().custom((q: Knex.QueryBuilder): any => {
             return q.where({sid}).whereIn('index', indexes)

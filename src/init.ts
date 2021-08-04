@@ -4,7 +4,7 @@ import morgan from 'morgan'
 import { config } from 'elzeard'
 import { cachedSocieties } from './models'
 
-export const init = async () => {
+export const initCachedData = async () => {
   await cachedSocieties.pullAll();
   await cachedSocieties.fetchMembersFromAll();
 }
@@ -32,6 +32,6 @@ export const initServer = async () => {
 
 
     await config.done()
-    await init()
+    await initCachedData()
     return server
 }

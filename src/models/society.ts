@@ -2,7 +2,6 @@ import { Joi, Collection, Model } from 'elzeard'
 import { MemberList } from './member'
 import fetch from 'node-fetch'
 import { Constitution as C } from 'wallet-script'
-import reward from './reward'
 
 export interface ICost {
     thread: number
@@ -29,6 +28,13 @@ export interface IConstitutionData {
     constitution: C.TConstitution
 }
 
+export interface ILastCostChangeProposal {
+    created_at: number
+    pubkh: string
+    index: number
+    price: number
+}
+
 export interface ISocietyStats {
     last_height: number,
     active_addresses: number
@@ -49,6 +55,8 @@ export interface ISociety {
     stats: ISocietyStats
     costs: ICost
     constitution: IConstitutionData
+    last_thread_cost_change_proposal: ILastCostChangeProposal
+    last_proposal_cost_change_proposal: ILastCostChangeProposal
 }
 
 export interface IContributorStats { 

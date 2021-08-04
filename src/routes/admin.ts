@@ -1,7 +1,7 @@
 import express from 'express'
 import { alias, proposal, society, SocietyModel, thread, reward, embed } from '../models'
 import { ADMIN_KEY, IS_PRODUCTION } from '../static'
-import { init } from '../init'
+import { initCachedData } from '../init'
 
 export const CheckIsDevelopment = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (IS_PRODUCTION){
@@ -37,7 +37,7 @@ export default (server: express.Express) => {
                 await proposal.quick().remove({sid: s.get().ID() })
                 await alias.sql().remove().all()
                 await embed.quick().remove({sid: s.get().ID() })
-                await init()
+                await initCachedData()
                 res.sendStatus(200)
                 return
             }

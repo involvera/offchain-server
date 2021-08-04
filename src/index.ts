@@ -6,7 +6,7 @@ import { IS_PRODUCTION } from './static'
 
 const PORT = 3020
 
-initServer().then((server) => {
+initServer().then(async (server) => {
     initRoutes(server)
 
     //dev
