@@ -105,8 +105,9 @@ export class SocietyModel extends Model {
             delete stats.costs
             this._stats = Object.assign({}, this.to().plain(), {stats}, o)
             return this.get().stats()
+        } else {
+            throw new Error(await r.text())
         }
-        return null
     }
 
     fetchMembers = async () => {
@@ -122,7 +123,6 @@ export class SocietyModel extends Model {
         this._members = new MemberList(ret, {})
       } catch (e){
           console.log(`Error: unable to fetch members on society: ${this.get().name()} (${this.get().pathName()}) on url: ${this.get().currencyRouteAPI()}`)
-          process.exit()
       }
     }
 

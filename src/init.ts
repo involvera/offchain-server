@@ -32,6 +32,11 @@ export const initServer = async () => {
 
 
     await config.done()
-    await initCachedData()
+    try {
+      await initCachedData()
+    } catch (e){
+      console.log(e)
+      process.exit(0)
+    }
     return server
 }
