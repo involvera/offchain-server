@@ -48,7 +48,7 @@ export class ThreadModel extends Model {
         }
     }
 
-    getRewards = async () => {
+    getRewards = async (): Promise<IRewardCount> => {
         const res = await this.sql().knex().raw(`
             SELECT
                 sum(case when category = ? then 1 else 0 end) AS n_upvote,
@@ -60,6 +60,9 @@ export class ThreadModel extends Model {
             WHERE 
                 target_pkh=?
         `, (REWARD_CATEGORIES as string[]).concat([this.get().pubKH()]))
+        if (res[0][0].n_upvote == null){
+            return {n_upvote: 0, n_reward_0:0, n_reward_1: 0,n_reward_2: 0}
+        }
         return res[0][0] as IRewardCount
     }
 
@@ -107,11 +110,6 @@ export class ThreadModel extends Model {
 export class ThreadCollection extends Collection {
     constructor(initialState: any, options: any){
         super(initialState, [ThreadModel, ThreadCollection], options)
-    }
-
-    getRewards = async () => {
-        const rewardTable = reward.sql().table().name()
-        const res = await this.sql().knex().from(rewardTable).select('category', 'target_pkh').whereIn('target_pkh', this.local().map((t: ThreadModel) => t.get().pubKH() ))
     }
 
     fetchByPubK = async (public_key: string) => await this.quick().find({ public_key }) as ThreadModel
