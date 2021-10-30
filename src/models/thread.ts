@@ -5,8 +5,11 @@ import { AliasModel } from './alias'
 import { T_FETCHING_FILTER } from '../static/types'
 import Knex from 'knex'
 import { EmbedCollection } from './embed'
-import { reward } from './'
-import { REWARD_CATEGORIES } from './reward'
+import fetch from 'node-fetch'
+
+// import { reward } from './'
+// import { REWARD_CATEGORIES } from './reward'
+import { SocietyModel } from './society'
 
 interface IRewardCount {
     n_upvote: number
@@ -16,6 +19,19 @@ interface IRewardCount {
 }
 
 export class ThreadModel extends Model {
+
+    static FetchRewards = async (pubkhs: string, society: SocietyModel) => {
+        try {
+            const res = await fetch(society.get().currencyRouteAPI() + '/threads/rewards',{
+                headers: { list: pubkhs }
+            })
+            if (res.status == 200)
+                return await res.json() as IRewardCount[]
+        } catch(e){
+            throw new Error(e)
+        }
+    }
+
 
     static schema = Joi.object({
         id: Joi.number().autoIncrement().primaryKey().group(['full']),
@@ -48,23 +64,7 @@ export class ThreadModel extends Model {
         }
     }
 
-    getRewards = async (): Promise<IRewardCount> => {
-        const res = await this.sql().knex().raw(`
-            SELECT
-                sum(case when category = ? then 1 else 0 end) AS n_upvote,
-                sum(case when category = ? then 1 else 0 end) AS n_reward_0,
-                sum(case when category = ? then 1 else 0 end) AS n_reward_1,
-                sum(case when category = ? then 1 else 0 end) AS n_reward_2
-            FROM
-                ${reward.sql().table().name()}
-            WHERE 
-                target_pkh=?
-        `, (REWARD_CATEGORIES as string[]).concat([this.get().pubKH()]))
-        if (res[0][0].n_upvote == null){
-            return {n_upvote: 0, n_reward_0:0, n_reward_1: 0,n_reward_2: 0}
-        }
-        return res[0][0] as IRewardCount
-    }
+    getRewards = async (society: SocietyModel) => ThreadModel.FetchRewards(this.get().pubKH(), society)
 
     get = () => {
         return {
@@ -93,7 +93,7 @@ export class ThreadModel extends Model {
 
     prepareJSONRendering = () => this.setState({ content_link: this.get().contentLink() }, true)
 
-    renderJSON = async (filter: T_FETCHING_FILTER)  => {
+    renderJSON = async (filter: T_FETCHING_FILTER, society: SocietyModel | null)  => {
         let embeds: string[] = []
         if (filter != 'preview')
             embeds = await this.get().embeds()
@@ -101,7 +101,9 @@ export class ThreadModel extends Model {
         const json = this.to().filterGroup(filter).plain()
         if (filter == 'preview')
             json.preview = this.get().preview().embed_code
-        json.rewards = await this.getRewards()
+        if (society != null){
+            json.rewards = await this.getRewards(society)
+        }
         json.embeds = embeds
         return json
     }
@@ -111,6 +113,8 @@ export class ThreadCollection extends Collection {
     constructor(initialState: any, options: any){
         super(initialState, [ThreadModel, ThreadCollection], options)
     }
+
+    fetchRewards = async (society: SocietyModel) => ThreadModel.FetchRewards(this.local().map((t: ThreadModel) => t.get().pubKH()).join(','), society)
 
     fetchByPubK = async (public_key: string) => await this.quick().find({ public_key }) as ThreadModel
     fetchByPubKH = async (sid: number, public_key_hashed: string) => await this.quick().find({ sid, public_key_hashed }) as ThreadModel
@@ -123,9 +127,12 @@ export class ThreadCollection extends Collection {
     }
     
     //Improve this method to execute only ONE getRewards request to pull all the rewards count at once.
-    renderJSON = (filter: T_FETCHING_FILTER): any => {
-        return Promise.all(this.local().map(async (t: ThreadModel) => {
-            return await t.renderJSON(filter)
+    renderJSON = async (filter: T_FETCHING_FILTER, society:SocietyModel) => {
+        const list = await this.fetchRewards(society)
+        let i = -1;
+        Promise.all(this.local().map(async (t: ThreadModel) => {
+            i++
+            return Object.assign({}, await t.renderJSON(filter, null), list[i])
         }))
     }
 }

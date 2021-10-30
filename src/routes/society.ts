@@ -21,29 +21,6 @@ const getSocietyIfExists = async (sid: number, req: express.Request, res: expres
 export const CheckIfSocietyExistsByBodyParam = async (req: express.Request, res: express.Response, next: express.NextFunction) => await getSocietyIfExists(req.body.sid, req, res, next)
 export const CheckIfSocietyExistsByRouteParam = async (req: express.Request, res: express.Response, next: express.NextFunction) => await getSocietyIfExists(parseInt(req.params.sid), req, res, next)
 
-
-export const CheckIfLughHeightHasChanged = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    const { content_link, lugh_height } = req.body
-    const s = res.locals.society as SocietyModel
-    const so = cachedSocieties.local().find({id: s.get().ID()}) as SocietyModel
-    let b = false
-    if (!!lugh_height){
-        if (so.get().stats().stats.last_height < lugh_height)
-            b = true
-    }
-    if (!!content_link){
-        if ((content_link as IContentLink).link.lh < lugh_height)
-            b = true
-    }
-
-    //Do some optimization here to avoid multiple requests on parallel requests
-    if (b){
-        await so.fetchMembers()
-        await so.fetchStats()
-    }
-    next()
-}
-
 export default (server: express.Express) => {
     const { schemaValidator } = society.expressTools().middleware()
     const { postHandler } = society.expressTools().request()
@@ -70,24 +47,12 @@ export default (server: express.Express) => {
         }
     })
 
-    server.get('/society/:sid/address/:address/stats', 
-    async (req: express.Request, res: express.Response) => {
-        const { sid, address } = req.params
-        const s = cachedSocieties.local().find({ id: parseInt(sid) }) as SocietyModel
-        if (!s){
-            res.sendStatus(404)
-            return
-        }
-        res.status(200)
-        res.json(s.fetchContributorStats(address))
-    })
-
     server.get('/society/:sid',
     CheckIfSocietyExistsByRouteParam,
     async (req: express.Request, res: express.Response) => {
         const s = res.locals.society as SocietyModel
         try {
-            const ss = await s.fetchStats()
+            const ss = await s.pullStats()
             const aliases = await alias.pullByAddresses(ss.stats.most_active_addresses)
             ss.stats.most_active_addresses = aliases.local().to().filterGroup('author').plain()
             res.status(200)

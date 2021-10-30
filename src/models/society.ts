@@ -1,7 +1,6 @@
 import { Joi, Collection, Model } from 'elzeard'
-import { MemberList } from './member'
-import fetch from 'node-fetch'
 import { Constitution as C } from 'wallet-script'
+import fetch from 'node-fetch'
 
 export interface ICost {
     thread: number
@@ -67,8 +66,8 @@ export interface IContributorStats {
 
 export class SocietyModel extends Model {
 
-    private _members: MemberList = null
     private _stats: ISociety = null
+    private _prevHash: string = 'empty'
 
     static schema = Joi.object({
         id: Joi.number().autoIncrement().primaryKey(),
@@ -86,50 +85,41 @@ export class SocietyModel extends Model {
         super(initialState, SocietyModel, options)
     }
 
-    fetchContributorStats = (addr: string): IContributorStats  => {
-        const index = this.get().members().findIndex({ addr })
-        if (index > -1)
-            return { sid: this.get().ID(), addr, position: index + 1 }
-        return { sid: this.get().ID(), addr, position: this.get().members().count() }
-    } 
-
-    fetchStats = async () => {
-        const r = await fetch(this.get().currencyRouteAPI() + `/society/stats`)
-        if (r.status == 200){
-            const stats = await r.json()
-            const o = {
-                constitution: stats.constitution,
-                costs: stats.costs
-            }
-            delete stats.constitution
-            delete stats.costs
-            this._stats = Object.assign({}, this.to().plain(), {stats}, o)
-            return this.get().stats()
+    fetchStatsSha = async () => {
+        const res = await fetch(this.get().currencyRouteAPI() + `/society/hash`)
+        if (res.status == 200){
+            return await res.json()
         } else {
-            throw new Error(await r.text())
+            throw new Error(await res.text())
         }
     }
 
-    fetchMembers = async () => {
-      try {
-        const res = await fetch(`${this.get().currencyRouteAPI()}/society/members`)
-        const str = await res.json()
-        const array = str.split(';')
-        const ret = []
-        for (let elem of array){
-            const split = elem.split(',')
-            ret.push({ addr: split[0], vp: parseInt(split[1]) })
+    pullStats = async () => {
+        try {
+            const hash = await this.fetchStatsSha()
+            if (hash != this._prevHash){
+                this._prevHash = hash
+                const r = await fetch(this.get().currencyRouteAPI() + `/society`)
+                if (r.status == 200){
+                    const stats = await r.json()
+                    const o = {
+                        constitution: stats.constitution,
+                        costs: stats.costs
+                    }
+                    delete stats.constitution
+                    delete stats.costs
+                    this._stats = Object.assign({}, this.to().plain(), {stats}, o)
+                    return this.get().stats()
+                }
+            }
+        } catch (e){
+            throw new Error(await e.text())
         }
-        this._members = new MemberList(ret, {})
-      } catch (e){
-          console.log(`Error: unable to fetch members on society: ${this.get().name()} (${this.get().pathName()}) on url: ${this.get().currencyRouteAPI()}`)
-      }
     }
 
     get = () => {
         return {
             stats: (): ISociety => this._stats,
-            members: (): MemberList => this._members, 
             ID: (): number => this.state.id,
             name: (): string => this.state.name,
             pathName: (): string => this.state.path_name,
@@ -145,13 +135,6 @@ export class SocietyModel extends Model {
 export class SocietyCollection extends Collection {
     constructor(initialState: any, options: any){
         super(initialState, [SocietyModel, SocietyCollection], options)
-    }
-    
-    fetchMembersFromAll = async () => {
-        await Promise.all(this.local().map(async (s: SocietyModel) => {
-            await s.fetchMembers()
-            await s.fetchStats()
-        }))
     }
 
     pullAll = async () => {

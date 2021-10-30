@@ -6,7 +6,6 @@ import { cachedSocieties } from './models'
 
 export const initCachedData = async () => {
   await cachedSocieties.pullAll();
-  await cachedSocieties.fetchMembersFromAll();
 }
 
 export const initServer = async () => {
@@ -23,13 +22,12 @@ export const initServer = async () => {
 
     config.setHistoryDirPath('./history')
     config.setMySQLConfig({
-        host: '185.212.226.103',
+        host: 'localhost',
         user: 'fanta',
-        password: 'Aqw123!!',
+        password: 'aqw12345',
         database: 'involvera'
     })
     config.setCriticalCode('082376')
-
 
     await config.done()
     try {

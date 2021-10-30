@@ -1,9 +1,16 @@
 import { Joi, Collection, Model } from 'elzeard'
+import fetch from 'node-fetch'
+import { PubKeyHashFromAddress } from 'wallet-util'
+import { SocietyModel } from './society'
 
 export interface IAuthor {
     address: string,
     pp: string
     username: string
+}
+
+export interface IWalletInfo {
+
 }
 
 export class AliasModel extends Model {
@@ -27,6 +34,15 @@ export class AliasModel extends Model {
             ppURI: (): string | null => this.state.pp,
             username: (): string => this.state.username,
             createdAt: (): Date => this.state.created_at,
+        }
+    }
+
+    fetchWalletInfo = async (s: SocietyModel) => {
+        try {
+            const resp = await fetch(s.get().currencyRouteAPI() + '/wallet/' + PubKeyHashFromAddress(this.get().address()).toString('hex'))
+            if (resp.status == 200){
+            }
+        } catch (e){
         }
     }
 }

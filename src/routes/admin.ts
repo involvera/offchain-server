@@ -1,5 +1,5 @@
 import express from 'express'
-import { alias, proposal, society, SocietyModel, thread, reward, embed } from '../models'
+import { alias, proposal, society, SocietyModel, thread, embed } from '../models'
 import { ADMIN_KEY, IS_PRODUCTION } from '../static'
 import { initCachedData } from '../init'
 
@@ -32,7 +32,6 @@ export default (server: express.Express) => {
         try {
             let s = await society.fetchByID(parseInt(sid)) as SocietyModel
             if (s){
-                await reward.quick().remove({sid: s.get().ID() })
                 await thread.quick().remove({sid: s.get().ID() })
                 await proposal.quick().remove({sid: s.get().ID() })
                 await alias.sql().remove().all()
