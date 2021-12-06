@@ -32,7 +32,6 @@ export class ThreadModel extends Model {
         }
     }
 
-
     static schema = Joi.object({
         id: Joi.number().autoIncrement().primaryKey().group(['full']),
         sid: Joi.number().foreignKey('societies', 'id').noPopulate().required().group(['preview', 'view', 'full']),
@@ -102,7 +101,8 @@ export class ThreadModel extends Model {
         if (filter == 'preview')
             json.preview = this.get().preview().embed_code
         if (society != null){
-            json.rewards = await this.getRewards(society)
+            json.rewards = (await this.getRewards(society))[0]
+            
         }
         json.embeds = embeds
         return json
@@ -129,10 +129,11 @@ export class ThreadCollection extends Collection {
     //Improve this method to execute only ONE getRewards request to pull all the rewards count at once.
     renderJSON = async (filter: T_FETCHING_FILTER, society:SocietyModel) => {
         const list = await this.fetchRewards(society)
-        let i = -1;
-        Promise.all(this.local().map(async (t: ThreadModel) => {
+        let i = 0;
+        return Promise.all(this.local().map(async (t: ThreadModel) => {
+            const a = Object.assign({}, await t.renderJSON(filter, null), list[i])
             i++
-            return Object.assign({}, await t.renderJSON(filter, null), list[i])
+            return a
         }))
     }
 }

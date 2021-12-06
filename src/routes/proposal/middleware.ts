@@ -75,6 +75,7 @@ export const GetAndAssignLinkToProposal = async (req: express.Request, res: expr
             return
         }
     } catch (e){
+        console.log(e)
         res.status(500)
         res.json(e.toString())
     }
