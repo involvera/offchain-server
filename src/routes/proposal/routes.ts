@@ -2,9 +2,10 @@ import express from 'express'
 import { proposal }  from '../../models'
 import { bodyAssignator } from '../../utils'
 import { CheckIfProposalAlreadyRecorded, GetAndAssignLinkToProposal, CheckSignatureContent, CheckContent, BuildEmbed } from './middleware'
-import { GetProposalList, GetProposal } from './methods'
-import { CheckIfSocietyExistsByBodyParam } from '../society'
+import { GetProposalList, GetProposal, PostProposal } from './methods'
+import { CheckIfSocietyExistsByBodyParam, CheckIfSocietyExistsByRouteParam } from '../society'
 import { CheckIfAliasExist } from '../alias'
+
 
 export default (server: express.Express) => { 
 
@@ -13,7 +14,7 @@ export default (server: express.Express) => {
 
     server.post('/proposal', 
         bodyAssignator((req: express.Request) => {
-            return {  content_link: '_', vote: '_', index: 0, author: '1111111111111111111111111111111111', public_key_hashed: '0000000000000000000000000000000000000000' }
+            return {  index: 0, author: '1111111111111111111111111111111111', public_key_hashed: '0000000000000000000000000000000000000000' }
         }),
         CheckSignatureContent,
         CheckIfSocietyExistsByBodyParam,
@@ -23,11 +24,11 @@ export default (server: express.Express) => {
         schemaValidator,
         CheckIfAliasExist,
         BuildEmbed,
-        postHandler(['content', 'title', 'public_key', 'signature', 'content_link', 'vote', 'index', 'author', 'public_key_hashed', 'sid', 'lugh_height'], 'author')
+        PostProposal
     )
 
-    server.get('/proposal/:sid/:index', GetProposal)
+    server.get('/proposal/:sid/:index', CheckIfSocietyExistsByRouteParam, GetProposal)
 
-    server.get('/proposal/:sid', GetProposalList)
+    server.get('/proposal/:sid', CheckIfSocietyExistsByRouteParam, GetProposalList)
 
 }

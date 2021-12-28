@@ -27,7 +27,7 @@ export const initServer = async () => {
         password: 'aqw12345',
         database: 'involvera'
     })
-    config.setCriticalCode('082376')
+    config.setCriticalCode('281089')
 
     await config.done()
     try {

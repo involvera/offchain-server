@@ -1,16 +1,13 @@
 import express from 'express'
-import {proposal, alias, SocietyModel, embed, ProposalModel } from '../../models'
-import fetch from 'node-fetch'
+import {proposal, SocietyModel, embed, ProposalModel } from '../../models'
 import { ToPubKeyHash, GetAddressFromPubKeyHash, VerifySignatureHex, ToArrayBufferFromB64 } from 'wallet-util'
 import { ScriptEngine } from 'wallet-script'
-import { IContentLink, IKindLink } from '../interfaces'
 
 export const CheckContent = (req: express.Request, res: express.Response, next: express.NextFunction) => { 
     const { content, content_link } = req.body
 
-    const link: IKindLink = JSON.parse(content_link)
     const length = (content as string).split('~~~_~~~_~~~_~~~').length
-    if (new ScriptEngine(ToArrayBufferFromB64(link.output.script)).proposalContentTypeString() == 'APPLICATION'){
+    if (new ScriptEngine(ToArrayBufferFromB64(content_link.output.script)).proposalContentTypeString() == 'APPLICATION'){
         if (length == 4){
             next()
             return
@@ -56,36 +53,33 @@ export const GetAndAssignLinkToProposal = async (req: express.Request, res: expr
     try {
         const s = res.locals.society as SocietyModel
         const public_key_hashed = ToPubKeyHash(Buffer.from(public_key, 'hex')).toString('hex')
-        const r = await fetch(s.get().currencyRouteAPI() + `/proposal/${public_key_hashed}`)
-        if (r.status == 200){
-            const json = await r.json() as IContentLink
+        const json = await ProposalModel.fetchOnChainData(s, public_key_hashed)
+        if (!!json && typeof json !== 'string'){
             req.body = Object.assign(req.body, {
                 author: GetAddressFromPubKeyHash(Buffer.from(json.pubkh_origin, 'hex')),
-                vote: JSON.stringify(json.vote),
-                content_link: JSON.stringify(json.link),
-                lugh_height: json.link.lh,
+                vote: json.vote,
+                content_link: json.link,
                 public_key_hashed,
-                index: json.index
+                index: json.index,
             })
             next()
         } else {
-            const text = await r.text()
-            res.status(r.status)
-            res.json({error: text})
+            res.status(404)
+            res.json({error: json})
             return
         }
     } catch (e){
-        console.log(e)
         res.status(500)
         res.json(e.toString())
     }
 }
 
-
 export const BuildEmbed = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const { content, sid, index } = req.body
     const e = await embed.fetchByIndex(parseInt(sid), parseInt(index))
-    const p = new ProposalModel(req.body,{})
+    const s = res.locals.society as SocietyModel
+    const p = new ProposalModel(req.body, {})
+    await p.pullOnChainData(s)
     if (e){
         try {
             await e.setState({ content: p.get().preview().embed_code }).saveToDB()
