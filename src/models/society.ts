@@ -1,6 +1,7 @@
 import { Joi, Collection, Model } from 'elzeard'
 import { Constitution as C } from 'wallet-script'
 import fetch from 'node-fetch'
+import proposal, { ProposalModel } from './proposal'
 
 export interface ICost {
     thread: number
@@ -23,7 +24,7 @@ export interface IScriptProposal {
 }
 
 export interface IConstitutionData {
-    proposal: IScriptProposal
+    proposal: ProposalModel
     constitution: C.TConstitution
 }
 
@@ -102,6 +103,12 @@ export class SocietyModel extends Model {
                 const r = await fetch(this.get().currencyRouteAPI() + `/society`)
                 if (r.status == 200){
                     const stats = await r.json()
+                    const p = await proposal.pullByPubKH(stats.constitution.proposal.pubkh)
+                    if (p){
+                        await p.pullOnChainData(this)
+                        stats.constitution.proposal = p
+                    } else 
+                        stats.constitution.proposal = null
                     const o = {
                         constitution: stats.constitution,
                         costs: stats.costs
@@ -113,7 +120,7 @@ export class SocietyModel extends Model {
                 }
             }
         } catch (e){
-            throw new Error(await e.text())
+            throw new Error(e)
         }
     }
 

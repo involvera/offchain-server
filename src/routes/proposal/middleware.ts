@@ -66,7 +66,6 @@ export const GetAndAssignLinkToProposal = async (req: express.Request, res: expr
         } else {
             res.status(404)
             res.json({error: json})
-            return
         }
     } catch (e){
         res.status(500)
@@ -79,13 +78,21 @@ export const BuildEmbed = async (req: express.Request, res: express.Response, ne
     const e = await embed.fetchByIndex(parseInt(sid), parseInt(index))
     const s = res.locals.society as SocietyModel
     const p = new ProposalModel(req.body, {})
-    await p.pullOnChainData(s)
+    try {
+        await p.pullOnChainData(s)
+    } catch (e){
+        res.status(500)
+        res.json(e.toString())
+        return        
+    }
+    
     if (e){
         try {
             await e.setState({ content: p.get().preview().embed_code }).saveToDB()
         } catch(err){
             res.status(500)
             res.json(err.toString())
+            return
         }
     } else {
         try {
@@ -93,6 +100,7 @@ export const BuildEmbed = async (req: express.Request, res: express.Response, ne
         } catch (err){
             res.status(500)
             res.json(err.toString())
+            return
         }
     }
     next()
