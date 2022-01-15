@@ -6,7 +6,6 @@ import { GetProposalList, GetProposal, PostProposal } from './methods'
 import { CheckIfSocietyExistsByBodyParam, CheckIfSocietyExistsByRouteParam } from '../society'
 import { CheckIfAliasExist } from '../alias'
 
-
 export default (server: express.Express) => { 
 
     const { schemaValidator } = proposal.expressTools().middleware()
