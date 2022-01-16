@@ -2,6 +2,7 @@ import express from 'express'
 import {proposal, SocietyModel, embed, ProposalModel } from '../../models'
 import { ToPubKeyHash, GetAddressFromPubKeyHash, VerifySignatureHex, ToArrayBufferFromB64 } from 'wallet-util'
 import { ScriptEngine } from 'wallet-script'
+import { fetchAndPickRightProposalContext } from './lib'
 
 export const CheckContent = (req: express.Request, res: express.Response, next: express.NextFunction) => { 
     const { content, content_link } = req.body
@@ -55,12 +56,14 @@ export const GetAndAssignLinkToProposal = async (req: express.Request, res: expr
         const public_key_hashed = ToPubKeyHash(Buffer.from(public_key, 'hex')).toString('hex')
         const json = await ProposalModel.fetchOnChainData(s, public_key_hashed)
         if (!!json && typeof json !== 'string'){
+            const context = await fetchAndPickRightProposalContext(s, public_key_hashed, json.link.output.script)
             req.body = Object.assign(req.body, {
                 author: GetAddressFromPubKeyHash(Buffer.from(json.pubkh_origin, 'hex')),
                 vote: json.vote,
                 content_link: json.link,
                 public_key_hashed,
                 index: json.index,
+                context
             })
             next()
         } else {

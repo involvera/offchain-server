@@ -30,7 +30,7 @@ export const PostProposal = async  (req: express.Request, res: express.Response,
 
     const { foreignConstraint } = proposal.expressTools().checks()
     const data: any = {}
-    const keys = ['content', 'title', 'public_key', 'signature', 'index', 'author', 'public_key_hashed', 'sid']
+    const keys = ['content', 'title', 'public_key', 'signature', 'index', 'author', 'public_key_hashed', 'sid', 'context']
     
     keys.map((v: string) => {
         const val = req.body[v]

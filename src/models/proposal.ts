@@ -1,7 +1,6 @@
 import _ from 'lodash'
 import { Joi, Collection, Model } from 'elzeard'
-// import { IContentLink, IKindLink, IVote } from '../routes/interfaces'
-import { IContentLink, IKindLinkUnRaw, IVoteSummary } from 'community-coin-types'
+import { IContentLink, IKindLinkUnRaw, IVoteSummary, IProposalContext } from 'community-coin-types'
 import { BuildProposalPreviewString} from 'involvera-content-embedding'
 import { AliasModel } from './alias'
 import { ScriptEngine } from 'wallet-script'
@@ -12,12 +11,6 @@ import { EmbedCollection } from './embed'
 import { SocietyModel } from './society'
 import fetch from 'node-fetch'
 
-// interface IProposal {
-
-
-// }
-
-
 export class ProposalModel extends Model {
 
     private _onChainData: IContentLink | null = null
@@ -25,6 +18,15 @@ export class ProposalModel extends Model {
     static fetchOnChainData = async (society: SocietyModel, pubkhHex: string): Promise<string | IContentLink> => {
         try {
             const response = await fetch(society.get().currencyRouteAPI() + '/proposal/' + pubkhHex)
+            return response.status === 200 ? await response.json() : await response.text()
+        } catch (e){
+            throw new Error(e)
+        }
+    }
+
+    static fetchProposalContext = async(society: SocietyModel, pubkhHex: string): Promise<string | IProposalContext> => {
+        try {
+            const response = await fetch(society.get().currencyRouteAPI() + '/proposal/' + pubkhHex + '/context')
             return response.status === 200 ? await response.json() : await response.text()
         } catch (e){
             throw new Error(e)
@@ -45,7 +47,7 @@ export class ProposalModel extends Model {
         content: Joi.string().required().group(['view', 'full']),
 
         created_at: Joi.date().default('now').group(['preview', 'view', 'full']),
-        prev: Joi.string().group(['view', 'full'])
+        context: Joi.string().max(15_000).group(['view', 'full'])
     })
 
     setOnChainData = (json: IContentLink) => {
