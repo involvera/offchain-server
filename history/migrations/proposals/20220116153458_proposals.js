@@ -1,11 +1,13 @@
 exports.up = function(knex) {
    return knex.schema.table('proposals', function(t) {
-      t.text('embed_list');
+      t.text('content').alter();
+      t.text('prev');
    })
 };
 
 exports.down = function(knex) {
    return knex.schema.table('proposals', function(t) {
-      t.dropColumn('embed_list');
+      t.dropColumn('prev');
+      t.string('content', 15000).alter();
    })
 };

@@ -1,50 +1,15 @@
+import _ from 'lodash'
 import { Joi, Collection, Model } from 'elzeard'
-import { Constitution as C } from 'wallet-script'
 import fetch from 'node-fetch'
 import proposal, { ProposalModel } from './proposal'
-
-export interface ICost {
-    thread: number
-    proposal: number
-    upvote: number
-    reaction_0: number
-    reaction_1: number
-    reaction_2: number
-}
-
-export interface IScriptOrigin {
-    tx_id: string | null
-    vout: number
-}
-
-export interface IScriptProposal {
-    origin: IScriptOrigin
-    pubkh: string
-    content_nonce: number
-}
+import { ISocietyStats, ICostProposal, IConstitutionRule, ILastCostChange } from 'community-coin-types'
 
 export interface IConstitutionData {
     proposal: ProposalModel
-    constitution: C.TConstitution
+    constitution: IConstitutionRule[]
 }
 
-export interface ILastCostChangeProposal {
-    created_at: number
-    pubkh: string
-    index: number
-    price: number
-}
-
-export interface ISocietyStats {
-    last_height: number,
-    active_addresses: number
-    most_active_addresses: string[],
-    circulating_supply: string
-    total_contributor: number
-    circulating_vp_supply: string
-}
-
-export interface ISociety {
+export interface ILocalSocietyStats {
     id: number
     name: string
     created_at: Date
@@ -53,21 +18,15 @@ export interface ISociety {
     domain: string,
     currency_route_api: string
     stats: ISocietyStats
-    costs: ICost
+    costs: ICostProposal
     constitution: IConstitutionData
-    last_thread_cost_change_proposal: ILastCostChangeProposal
-    last_proposal_cost_change_proposal: ILastCostChangeProposal
-}
-
-export interface IContributorStats { 
-    addr: string
-    position: number
-    sid: number
+    last_thread_cost_change_proposal: ILastCostChange
+    last_proposal_cost_change_proposal: ILastCostChange
 }
 
 export class SocietyModel extends Model {
 
-    private _stats: ISociety = null
+    private _stats: ILocalSocietyStats = null
     private _prevHash: string = 'empty'
 
     static schema = Joi.object({
@@ -102,20 +61,22 @@ export class SocietyModel extends Model {
                 this._prevHash = hash
                 const r = await fetch(this.get().currencyRouteAPI() + `/society`)
                 if (r.status == 200){
-                    const stats = await r.json()
+                    let stats = await r.json() as ISocietyStats
                     const p = await proposal.pullByPubKH(stats.constitution.proposal.pubkh)
+                    const renderedStats = _.cloneDeep(stats as any) as ILocalSocietyStats
                     if (p){
                         await p.pullOnChainData(this)
-                        stats.constitution.proposal = p
+                        renderedStats.constitution.proposal = p
                     } else 
-                        stats.constitution.proposal = null
+                        renderedStats.constitution.proposal = null
+                        
                     const o = {
-                        constitution: stats.constitution,
-                        costs: stats.costs
+                        constitution: renderedStats.constitution,
+                        costs: renderedStats.costs
                     }
-                    delete stats.constitution
-                    delete stats.costs
-                    this._stats = Object.assign({}, this.to().plain(), {stats}, o)
+                    delete renderedStats.constitution
+                    delete renderedStats.costs
+                    this._stats = Object.assign({}, this.to().plain(), {stats: renderedStats}, o)
                     return this.get().stats()
                 }
             }
@@ -126,7 +87,7 @@ export class SocietyModel extends Model {
 
     get = () => {
         return {
-            stats: (): ISociety => this._stats,
+            stats: (): ILocalSocietyStats => this._stats,
             ID: (): number => this.state.id,
             name: (): string => this.state.name,
             pathName: (): string => this.state.path_name,

@@ -1,11 +1,11 @@
 exports.up = function(knex) {
    return knex.schema.table('proposals', function(t) {
-      t.dateTime('end_at');
+      t.dropColumn('lugh_height');
    })
 };
 
 exports.down = function(knex) {
    return knex.schema.table('proposals', function(t) {
-      t.dropColumn('end_at');
+      t.specificType('lugh_height', 'int unsigned').notNullable();
    })
 };

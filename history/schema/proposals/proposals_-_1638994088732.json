@@ -11,5 +11,6 @@
     "content": "t.string('content', 15000).notNullable()",
     "content_link": "t.text('content_link').notNullable()",
     "vote": "t.text('vote').notNullable()",
-    "created_at": "t.dateTime('created_at').defaultTo(knex.raw('now()'))"
+    "created_at": "t.dateTime('created_at').defaultTo(knex.raw('now()'))",
+    "end_at": "t.specificType('end_at', 'mediumint unsigned')"
 }

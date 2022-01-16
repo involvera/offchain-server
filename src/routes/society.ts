@@ -1,7 +1,6 @@
 import express from 'express'
-import { alias, cachedSocieties, society, SocietyModel } from '../models' 
+import { alias, society, SocietyModel } from '../models' 
 import { CheckAdminKey } from './admin'
-import { IContentLink } from './interfaces'
 
 const getSocietyIfExists = async (sid: number, req: express.Request, res: express.Response, next: express.NextFunction) => {
     try {

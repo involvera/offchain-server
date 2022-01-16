@@ -1,6 +1,7 @@
 import _ from 'lodash'
 import { Joi, Collection, Model } from 'elzeard'
-import { IContentLink, IKindLink, IVote } from '../routes/interfaces'
+// import { IContentLink, IKindLink, IVote } from '../routes/interfaces'
+import { IContentLink, IKindLinkUnRaw, IVoteSummary } from 'community-coin-types'
 import { BuildProposalPreviewString} from 'involvera-content-embedding'
 import { AliasModel } from './alias'
 import { ScriptEngine } from 'wallet-script'
@@ -10,6 +11,12 @@ import Knex from 'knex'
 import { EmbedCollection } from './embed'
 import { SocietyModel } from './society'
 import fetch from 'node-fetch'
+
+// interface IProposal {
+
+
+// }
+
 
 export class ProposalModel extends Model {
 
@@ -35,9 +42,10 @@ export class ProposalModel extends Model {
 
         index: Joi.number().required().group(['preview', 'view', 'full']),
         title: Joi.string().max(120).required().group(['preview', 'view', 'full']),
-        content: Joi.string().max(15000).required().group(['view', 'full']),
+        content: Joi.string().required().group(['view', 'full']),
 
         created_at: Joi.date().default('now').group(['preview', 'view', 'full']),
+        prev: Joi.string().group(['view', 'full'])
     })
 
     setOnChainData = (json: IContentLink) => {
@@ -45,7 +53,8 @@ export class ProposalModel extends Model {
             link: json.link,
             index: json.index,
             vote: json.vote,
-            pubkh_origin: json.pubkh_origin
+            pubkh_origin: json.pubkh_origin,
+            rewards: null
         }
     }
 
@@ -90,8 +99,8 @@ export class ProposalModel extends Model {
             author: (): AliasModel => this.state.author,
             pubKH: (): string => this.state.public_key_hashed,
             createdAt: (): Date => this.state.created_at,
-            contentLink: (): IKindLink => this._onChainData == null ? undefined : this._onChainData.link,
-            vote: (): IVote => this._onChainData == null ? undefined : this._onChainData.vote,
+            contentLink: (): IKindLinkUnRaw => this._onChainData == null ? undefined : this._onChainData.link,
+            vote: (): IVoteSummary => this._onChainData == null ? undefined : this._onChainData.vote,
         }
     }
 

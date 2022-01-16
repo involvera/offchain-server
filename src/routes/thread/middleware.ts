@@ -1,8 +1,8 @@
 import express from 'express'
 import fetch from 'node-fetch'
 import { ToPubKeyHash, GetAddressFromPubKeyHash } from 'wallet-util'
-import { thread, SocietyModel, embed, ThreadModel, AliasModel } from '../../models'
-import { IContentLink } from '../interfaces'
+import { thread, SocietyModel, embed, ThreadModel } from '../../models'
+import { IContentLink } from 'community-coin-types'
 
 export const GetAndAssignLinkToThread = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const { public_key } = req.body

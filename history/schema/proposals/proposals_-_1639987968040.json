@@ -8,7 +8,5 @@
     "index": "t.specificType('index', 'int').notNullable()",
     "title": "t.string('title', 120).notNullable()",
     "content": "t.string('content', 15000).notNullable()",
-    "content_link": "t.text('content_link').notNullable()",
-    "vote": "t.text('vote').notNullable()",
     "created_at": "t.dateTime('created_at').defaultTo(knex.raw('now()'))"
 }

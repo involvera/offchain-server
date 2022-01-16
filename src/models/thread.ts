@@ -1,5 +1,5 @@
 import { Joi, Collection, Model } from 'elzeard'
-import {  IKindLink } from '../routes/interfaces'
+import {  IKindLinkUnRaw } from 'community-coin-types'
 import { BuildThreadPreviewString } from 'involvera-content-embedding'
 import { AliasModel } from './alias'
 import { T_FETCHING_FILTER } from '../static/types'
@@ -7,8 +7,6 @@ import Knex from 'knex'
 import { EmbedCollection } from './embed'
 import fetch from 'node-fetch'
 
-// import { reward } from './'
-// import { REWARD_CATEGORIES } from './reward'
 import { SocietyModel } from './society'
 
 interface IRewardCount {
@@ -82,7 +80,7 @@ export class ThreadModel extends Model {
             id: (): number => this.state.id,
             sid: (): number => this.state.sid,
             createdAt: (): Date => this.state.created_at,
-            contentLink: (): IKindLink => {
+            contentLink: (): IKindLinkUnRaw => {
                 if (typeof this.state.content_link == 'string')
                     return JSON.parse(this.state.content_link)
                 return this.state.content_link

@@ -8,14 +8,14 @@ import { ThreadModel } from './thread';
 import { ArrayObjToDoubleArray, MixArraysToArrayObj } from '../utils/express';
 import society, { SocietyCollection, SocietyModel } from './society';
 
-export interface IEmbed {
-    content: string
-    type: TEmbedType
-    public_key_hashed: string
-    index?: number
-    sid: number
-    created_at: Date
-}
+// export interface IEmbed {
+//     content: string
+//     type: TEmbedType
+//     public_key_hashed: string
+//     index?: number
+//     sid: number
+//     created_at: Date
+// }
 
 export class EmbedModel extends Model {
 

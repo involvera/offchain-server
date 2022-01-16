@@ -3,16 +3,6 @@ import fetch from 'node-fetch'
 import { PubKeyHashFromAddress } from 'wallet-util'
 import { SocietyModel } from './society'
 
-export interface IAuthor {
-    address: string,
-    pp: string
-    username: string
-}
-
-export interface IWalletInfo {
-
-}
-
 export class AliasModel extends Model {
 
     static schema = Joi.object({

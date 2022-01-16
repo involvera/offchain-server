@@ -1,11 +1,11 @@
 exports.up = function(knex) {
    return knex.schema.table('proposals', function(t) {
-      t.dropColumn('embed_list');
+      t.specificType('end_at', 'mediumint unsigned').alter();
    })
 };
 
 exports.down = function(knex) {
    return knex.schema.table('proposals', function(t) {
-      t.text('embed_list');
+      t.dateTime('end_at').alter();
    })
 };
