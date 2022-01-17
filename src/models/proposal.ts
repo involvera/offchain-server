@@ -21,7 +21,7 @@ export class ProposalModel extends Model {
             const response = await fetch(society.get().currencyRouteAPI() + '/proposal/' + pubkhHex, {
                 headers: headerSig as any || {},
             })
-            return response.status === 200 ? await response.json() : await response.text()
+            return response.status === 200 ? await response.json() as IContentLink : await response.text() as string
         } catch (e){
             throw new Error(e)
         }
@@ -30,7 +30,7 @@ export class ProposalModel extends Model {
     static fetchProposalContext = async(society: SocietyModel, pubkhHex: string): Promise<string | IProposalContext> => {
         try {
             const response = await fetch(society.get().currencyRouteAPI() + '/proposal/' + pubkhHex + '/context')
-            return response.status === 200 ? await response.json() : await response.text()
+            return response.status === 200 ? await response.json() as IProposalContext : await response.text() as string
         } catch (e){
             throw new Error(e)
         }
@@ -145,7 +145,7 @@ export class ProposalCollection extends Collection {
             const response = await fetch(society.get().currencyRouteAPI() + '/proposals', {
                 headers: Object.assign({ list: pubKHList }, headerSig || {})
             })
-            return response.status == 200 ? await response.json() : await response.text()
+            return response.status == 200 ? await response.json() as IContentLink[] : await response.text() as string
         } catch (e){
             throw new Error(e)
         }

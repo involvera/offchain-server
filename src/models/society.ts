@@ -45,10 +45,13 @@ export class SocietyModel extends Model {
         super(initialState, SocietyModel, options)
     }
 
+    private __getPrevHash = () => this._prevHash
+    private __setPrevHash = (hash: string) => this._prevHash = hash
+
     fetchStatsSha = async () => {
         const res = await fetch(this.get().currencyRouteAPI() + `/society/hash`)
         if (res.status == 200){
-            return await res.json()
+            return await res.json() as string
         } else {
             throw new Error(await res.text())
         }
@@ -57,8 +60,8 @@ export class SocietyModel extends Model {
     pullStats = async () => {
         try {
             const hash = await this.fetchStatsSha()
-            if (hash != this._prevHash){
-                this._prevHash = hash
+            if (hash != this.__getPrevHash()){
+                this.__setPrevHash(hash)
                 const r = await fetch(this.get().currencyRouteAPI() + `/society`)
                 if (r.status == 200){
                     let stats = await r.json() as ISocietyStats
