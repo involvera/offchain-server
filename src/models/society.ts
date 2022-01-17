@@ -47,6 +47,7 @@ export class SocietyModel extends Model {
 
     private __getPrevHash = () => this._prevHash
     private __setPrevHash = (hash: string) => this._prevHash = hash
+    private __setStats = (stats: ILocalSocietyStats) => this._stats = stats
 
     fetchStatsSha = async () => {
         const res = await fetch(this.get().currencyRouteAPI() + `/society/hash`)
@@ -79,10 +80,10 @@ export class SocietyModel extends Model {
                     }
                     delete renderedStats.constitution
                     delete renderedStats.costs
-                    this._stats = Object.assign({}, this.to().plain(), {stats: renderedStats}, o)
-                    return this.get().stats()
+                    this.__setStats(Object.assign({}, this.to().plain(), {stats: renderedStats}, o))
                 }
             }
+            return this.get().stats()
         } catch (e){
             throw new Error(e)
         }

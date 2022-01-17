@@ -1,10 +1,10 @@
 import express from 'express'
-import { alias, society, SocietyModel } from '../models' 
+import { alias, cachedSocieties, society, SocietyModel } from '../models' 
 import { CheckAdminKey } from './admin'
 
 const getSocietyIfExists = async (sid: number, req: express.Request, res: express.Response, next: express.NextFunction) => {
     try {
-        const s = await society.fetchByID(sid) 
+        const s = await cachedSocieties.local().find({id: sid}) as SocietyModel
         if (!s){
             res.sendStatus(404)
             return
