@@ -10,14 +10,17 @@ import Knex from 'knex'
 import { EmbedCollection } from './embed'
 import { SocietyModel } from './society'
 import fetch from 'node-fetch'
+import { IHeaderSignature } from '../static/interfaces'
 
 export class ProposalModel extends Model {
 
     private _onChainData: IContentLink | null = null
 
-    static fetchOnChainData = async (society: SocietyModel, pubkhHex: string): Promise<string | IContentLink> => {
+    static fetchOnChainData = async (society: SocietyModel, pubkhHex: string, headerSig: IHeaderSignature | void): Promise<string | IContentLink> => {
         try {
-            const response = await fetch(society.get().currencyRouteAPI() + '/proposal/' + pubkhHex)
+            const response = await fetch(society.get().currencyRouteAPI() + '/proposal/' + pubkhHex, {
+                headers: headerSig as any || {},
+            })
             return response.status === 200 ? await response.json() : await response.text()
         } catch (e){
             throw new Error(e)
@@ -72,9 +75,9 @@ export class ProposalModel extends Model {
         }
     }
     
-    pullOnChainData = async (society: SocietyModel) => {
+    pullOnChainData = async (society: SocietyModel, headerSig: IHeaderSignature | void) => {
         try {
-            const json = await ProposalModel.fetchOnChainData(society, this.get().pubKH())
+            const json = await ProposalModel.fetchOnChainData(society, this.get().pubKH(), headerSig)
             !!json && typeof json !== 'string' && this.setOnChainData(json)
             if (!!json && typeof json === 'string')
                 throw new Error(json)
@@ -114,12 +117,12 @@ export class ProposalModel extends Model {
         }, true)
     }
 
-    renderJSON = async (filter: T_FETCHING_FILTER, society: SocietyModel | null) => {
+    renderJSON = async (filter: T_FETCHING_FILTER, society: SocietyModel | void, headerSig: IHeaderSignature | void) => {
         let embeds: string[] = []
         if (filter != 'preview')
             embeds = await this.get().embeds()
         if (society)
-            await this.pullOnChainData(society)
+            await this.pullOnChainData(society, headerSig)
         this.prepareJSONRendering()
         const json = this.to().filterGroup(filter).plain()
         json.embeds = embeds
@@ -137,10 +140,10 @@ export class ProposalModel extends Model {
 
 export class ProposalCollection extends Collection {
 
-    static fetchOnChainData = async (society: SocietyModel, pubKHList: string): Promise<IContentLink[] | string> => {
+    static fetchOnChainData = async (society: SocietyModel, pubKHList: string, headerSig: IHeaderSignature | void): Promise<IContentLink[] | string> => {
         try {
             const response = await fetch(society.get().currencyRouteAPI() + '/proposals', {
-                headers: { list: pubKHList }
+                headers: Object.assign({ list: pubKHList }, headerSig || {})
             })
             return response.status == 200 ? await response.json() : await response.text()
         } catch (e){
@@ -150,6 +153,12 @@ export class ProposalCollection extends Collection {
 
     constructor(initialState: any, options: any){
         super(initialState, [ProposalModel, ProposalCollection], options)
+    }
+
+
+    fetchLast = async () => {
+        const res = await this.quick().pull().orderBy('index','desc').limit(1).run() as ProposalCollection
+        return res.local().count() == 0 ? null : res.local().nodeAt(0) as ProposalModel
     }
 
     fetchByPubK = async (public_key: string) => await this.quick().find({ public_key }) as ProposalModel
@@ -169,17 +178,17 @@ export class ProposalCollection extends Collection {
 
     pullBySID = async (sid: number, page: number) => await this.copy().sql().pull().where({sid}).orderBy('created_at', 'desc').offset(page * 5).limit((page+1) * 5).run() as ProposalCollection
 
-    renderJSON = async (filter: T_FETCHING_FILTER, society: SocietyModel) => {
-        society && await this.pullOnChainData(society)
+    renderJSON = async (filter: T_FETCHING_FILTER, society: SocietyModel,  headerSig: IHeaderSignature | void) => {
+        society && await this.pullOnChainData(society, headerSig)
         return Promise.all(this.local().map(async (p: ProposalModel) => {
             return await p.renderJSON(filter, null)
         }))
     }
 
-    pullOnChainData = async (society: SocietyModel) => {
+    pullOnChainData = async (society: SocietyModel, headerSig: IHeaderSignature | void) => {
         try {
             const list = this.local().map((p: ProposalModel) => p.get().pubKH()).join(',')
-            const l = await ProposalCollection.fetchOnChainData(society, list)
+            const l = await ProposalCollection.fetchOnChainData(society, list, headerSig)
             if (typeof l == 'string'){
                 throw new Error(l)
             }

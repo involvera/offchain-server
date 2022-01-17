@@ -1,6 +1,9 @@
+import express from 'express'
 import { ScriptEngine } from "wallet-script";
 import { ToArrayBufferFromB64 } from "wallet-util";
 import { ProposalModel, SocietyModel } from "../../models";
+import { IHeaderSignature } from '../../static/interfaces';
+
 
 export const fetchAndPickRightProposalContext = async (society: SocietyModel, pubkhHex: string, script: string[]) => {
    
@@ -20,4 +23,13 @@ export const fetchAndPickRightProposalContext = async (society: SocietyModel, pu
         }
     }
     return '_'
+}
+
+export const getHeaderSignature = (req: express.Request): IHeaderSignature | void => {
+    const { signature, pubkey } = req.headers
+    let headerSig: IHeaderSignature = undefined
+    if (signature && pubkey){
+        headerSig = {signature: signature as string, pubkey: pubkey as string}
+    }
+    return headerSig
 }
