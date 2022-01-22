@@ -65,7 +65,8 @@ export const PostProposal = async  (req: express.Request, res: express.Response,
             link: req.body.content_link,
             pubkh_origin: req.body.public_key_hashed,
             index: req.body.index,
-            rewards: null
+            rewards: null,
+            user_vote: req.body.user_vote
         })
         const j = await m.renderJSON('full', null)
         res.status(201).json(j)

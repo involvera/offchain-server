@@ -59,7 +59,8 @@ export class ProposalModel extends Model {
             index: json.index,
             vote: json.vote,
             pubkh_origin: json.pubkh_origin,
-            rewards: null
+            rewards: null,
+            user_vote: json.user_vote || null as any
         }
     }
 
@@ -129,7 +130,8 @@ export class ProposalModel extends Model {
         return Object.assign(json, {
             content_link: this.state.content_link,
             vote: this.get().vote(),
-            pubkh_origin: this.getOnChainData().pubkh_origin
+            pubkh_origin: this.getOnChainData().pubkh_origin,
+            user_vote: this.getOnChainData().user_vote
         })
     }
 
@@ -180,9 +182,10 @@ export class ProposalCollection extends Collection {
 
     renderJSON = async (filter: T_FETCHING_FILTER, society: SocietyModel,  headerSig: IHeaderSignature | void) => {
         society && await this.pullOnChainData(society, headerSig)
-        return Promise.all(this.local().map(async (p: ProposalModel) => {
+        const list = await Promise.all(this.local().map(async (p: ProposalModel) => {
             return await p.renderJSON(filter, null)
         }))
+        return list
     }
 
     pullOnChainData = async (society: SocietyModel, headerSig: IHeaderSignature | void) => {
