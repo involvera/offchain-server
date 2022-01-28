@@ -2,7 +2,7 @@ import _ from 'lodash'
 import { Joi, Collection, Model } from 'elzeard'
 import fetch from 'node-fetch'
 import proposal, { ProposalModel } from './proposal'
-import { ISocietyStats, ICostProposal, IConstitutionRule, ILastCostChange } from 'community-coin-types'
+import { ISocietyStats, ICostProposal, IConstitutionRule, CostHistory } from 'community-coin-types'
 
 export interface IConstitutionData {
     proposal: ProposalModel
@@ -20,8 +20,8 @@ export interface ILocalSocietyStats {
     stats: ISocietyStats
     costs: ICostProposal
     constitution: IConstitutionData
-    last_thread_cost_change_proposal: ILastCostChange
-    last_proposal_cost_change_proposal: ILastCostChange
+    last_thread_cost_change_proposal: CostHistory
+    last_proposal_cost_change_proposal: CostHistory
 }
 
 export class SocietyModel extends Model {
