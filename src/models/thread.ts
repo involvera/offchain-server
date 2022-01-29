@@ -1,5 +1,5 @@
 import { Joi, Collection, Model } from 'elzeard'
-import {  IKindLinkUnRaw } from 'community-coin-types'
+import {  IKindLinkUnRaw, IReactionCount } from 'community-coin-types'
 import { BuildThreadPreviewString } from 'involvera-content-embedding'
 import { AliasModel } from './alias'
 import { T_FETCHING_FILTER } from '../static/types'
@@ -9,13 +9,6 @@ import fetch from 'node-fetch'
 
 import { SocietyModel } from './society'
 
-interface IRewardCount {
-    n_upvote: number
-    n_reward_0: number
-    n_reward_1: number
-    n_reward_2: number
-}
-
 export class ThreadModel extends Model {
 
     static FetchRewards = async (pubkhs: string, society: SocietyModel) => {
@@ -24,7 +17,7 @@ export class ThreadModel extends Model {
                 headers: { list: pubkhs }
             })
             if (res.status == 200)
-                return await res.json() as IRewardCount[]
+                return await res.json() as IReactionCount[]
         } catch(e){
             throw new Error(e)
         }

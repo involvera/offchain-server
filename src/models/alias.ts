@@ -1,7 +1,4 @@
 import { Joi, Collection, Model } from 'elzeard'
-import fetch from 'node-fetch'
-import { PubKeyHashFromAddress } from 'wallet-util'
-import { SocietyModel } from './society'
 
 export class AliasModel extends Model {
 
@@ -10,13 +7,13 @@ export class AliasModel extends Model {
         address: Joi.string().regex(/^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,39}$/).max(39).unique().required().group(['author']),
         created_at: Joi.date().default('now'),
         pp: Joi.string().max(255).group(['author']),
-        username: Joi.string().max(16).lowercase().regex(/^[a-z0-9_]{3,16}$/).unique().group(['author'])
+        username: Joi.string().max(16).lowercase().regex(/^[a-z0-9_]{3,16}$/).unique().group(['author']),
     })
 
     constructor(initialState: any, options: any){
         super(initialState, AliasModel, options)
     }
-    
+
     get = () => {
         return {
             ID: (): number => this.state.id,
@@ -24,15 +21,6 @@ export class AliasModel extends Model {
             ppURI: (): string | null => this.state.pp,
             username: (): string => this.state.username,
             createdAt: (): Date => this.state.created_at,
-        }
-    }
-
-    fetchWalletInfo = async (s: SocietyModel) => {
-        try {
-            const resp = await fetch(s.get().currencyRouteAPI() + '/wallet/' + PubKeyHashFromAddress(this.get().address()).toString('hex'))
-            if (resp.status == 200){
-            }
-        } catch (e){
         }
     }
 }
