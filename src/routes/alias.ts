@@ -89,8 +89,12 @@ export default (server: express.Express) => {
         const { address } = req.params     
         try {
             const a = await alias.quick().find({ address: address })
-            res.status(200)
-            res.json(a.to().filterGroup('author').plain())
+            if (!a)
+                res.sendStatus(404)
+            else {
+                res.status(200)
+                res.json(a.to().filterGroup('author').plain())
+            }
         } catch (e){
             res.status(500)
             res.json(e.toString())
