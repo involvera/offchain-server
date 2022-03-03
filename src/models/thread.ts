@@ -110,9 +110,9 @@ export class ThreadCollection extends Collection {
     fetchByPubK = async (public_key: string) => await this.quick().find({ public_key }) as ThreadModel
     fetchByPubKH = async (sid: number, public_key_hashed: string) => await this.quick().find({ sid, public_key_hashed }) as ThreadModel
  
-    pullBySID = async (sid: number, page: number) => await this.copy().sql().pull().where({sid}).orderBy('created_at', 'desc').offset(page * 10).limit((page+1) * 10).run() as ThreadCollection    
+    pullBySID = async (sid: number, page: number) => await this.ctx().sql().pull().where({sid}).orderBy('created_at', 'desc').offset(page * 10).limit((page+1) * 10).run() as ThreadCollection    
     pullByPubKHs = async (sid: number, pubkhs: string[]) => {
-        return await this.copy().sql().pull().custom((q: Knex.QueryBuilder): any => {
+        return await this.ctx().sql().pull().custom((q: Knex.QueryBuilder): any => {
             return q.where({sid}).whereIn('public_key_hashed', pubkhs)
         }) as ThreadCollection
     }

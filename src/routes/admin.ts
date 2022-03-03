@@ -34,7 +34,7 @@ export default (server: express.Express) => {
             if (s){
                 await thread.quick().remove({sid: s.get().ID() })
                 await proposal.quick().remove({sid: s.get().ID() })
-                await alias.sql().remove().all()
+                await alias.quick().remove('id', '<', 2_000_000_000)
                 await embed.quick().remove({sid: s.get().ID() })
                 await initCachedData()
                 res.sendStatus(200)

@@ -30,7 +30,8 @@ export const initServer = async () => {
         host: 'localhost',
         user: 'fanta',
         password: 'aqw12345',
-        database: 'involvera'
+        database: 'involvera',
+        timezone: 'utc'
     })
 
     await config.done()

@@ -1,5 +1,4 @@
 import express from 'express'
-import { UUIDToPubKeyHashHex } from 'wallet-util'
 import { SocietyModel, thread } from '../../models'
 
 export const GetThreadList = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
