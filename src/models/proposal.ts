@@ -94,7 +94,7 @@ export class ProposalModel extends Model {
                 return BuildProposalPreviewString(this.get().index(), new ScriptEngine(ToArrayBufferFromB64(link.output.script)).proposalContentTypeString(), this.get().createdAt(), this.get().vote(), this.get().title(), this.get().sid())
             },
             embeds: async () => {
-                const list = await EmbedCollection.FetchEmbeds(this)
+                const list = await EmbedCollection.FetchEmbeds(this.get().content(), this.get().sid())
                 return list.local().to().filterGroup('preview').plain().map((c: any) => c.content) as string[]
             },
             id: (): number => this.state.id, 

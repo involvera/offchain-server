@@ -1,5 +1,5 @@
 import express from 'express'
-import { embed, proposal, thread } from '../models' 
+import { embed, EmbedCollection, proposal, thread } from '../models' 
 
 export default (server: express.Express) => {
 
@@ -29,6 +29,20 @@ export default (server: express.Express) => {
             }
         }
     )
+
+    server.put('/embed/:sid/text', async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+        const { sid } = req.params
+        const { content } = req.body
+
+        try {
+            const embeds = await EmbedCollection.FetchEmbeds(content, parseInt(sid))
+            res.status(200)
+            res.json(embeds.local().to().filterGroup('preview').plain().map((c: any) => c.content))
+        } catch (e){
+            res.status(500)
+            res.json(e.toString())
+        }
+    })
 
     server.get('/embed/:sid/proposal/:index', 
         async (req: express.Request, res: express.Response, next: express.NextFunction) => {

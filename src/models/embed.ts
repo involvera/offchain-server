@@ -41,16 +41,16 @@ const SET_SID_IDX = ['sid', 'index']
 const SET_SID_PKH = ['sid', 'public_key_hashed']
 
 export class EmbedCollection extends Collection {
-    
-    static FetchEmbeds = async (origin: ProposalModel | ThreadModel): Promise<EmbedCollection> => {
-        const es = ParseEmbedInText(origin.get().content())
+
+    static FetchEmbeds = async (content: string, sid: number): Promise<EmbedCollection> => {
+        const es = ParseEmbedInText(content)
         if (es.length == 0)
             return embedTable.new([]) as EmbedCollection
         const societiesName = _.uniq(es.filter((e) => !!e.society).map((e) => e.society))
         let currentSociety = society.newNode({}) as SocietyModel
         let societies = society.new([]) as SocietyCollection
         try {
-            currentSociety = await society.fetchByID(origin.get().sid())
+            currentSociety = await society.fetchByID(sid)
         } catch(e){
             throw e;
         }
@@ -61,7 +61,7 @@ export class EmbedCollection extends Collection {
         societies.local().push(currentSociety)
         let embeds = []
         for (const e of es){
-            !e.society && embeds.push(Object.assign({}, e, {society: origin.get().sid()}))
+            !e.society && embeds.push(Object.assign({}, e, {society: sid}))
             if (e.society){
                 const s = societies.local().find({path_name: e.society}) as SocietyModel
                 s && embeds.push(Object.assign({}, e, {society: s.get().ID() }))

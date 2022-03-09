@@ -63,7 +63,7 @@ export class ThreadModel extends Model {
                 return BuildThreadPreviewString(this.get().pubKH(), this.get().author().to().filterGroup('author').string(), this.get().createdAt(), !link.target_content ? null : link.target_content, this.get().title(), this.get().content(), this.get().sid())
             },
             embeds: async () => {
-                const list = await EmbedCollection.FetchEmbeds(this)
+                const list = await EmbedCollection.FetchEmbeds(this.get().content(), this.get().sid())
                 return list.local().to().filterGroup('preview').plain().map((c: any) => c.content) as string[]
             },
             title: (): string => this.state.title,
