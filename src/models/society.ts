@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import { Joi, Collection, Model } from 'elzeard'
-import fetch from 'node-fetch'
+import axios from 'axios'
 import proposal, { ProposalModel } from './proposal'
 import { ISocietyStats, ICostProposal, IConstitutionRule, ICostHistory } from 'community-coin-types'
 
@@ -50,11 +50,15 @@ export class SocietyModel extends Model {
     private __setStats = (stats: ILocalSocietyStats) => this._stats = stats
 
     fetchStatsSha = async () => {
-        const res = await fetch(this.get().currencyRouteAPI() + `/society/hash`)
+        const res = await axios.get(this.get().currencyRouteAPI() + `/society/hash`, {
+            validateStatus: function (status) {
+                return status >= 200 && status <= 500
+            }
+        })
         if (res.status == 200){
-            return await res.json() as string
+            return res.data as string
         } else {
-            throw new Error(await res.text())
+            throw new Error(res.data)
         }
     }
 
@@ -63,9 +67,13 @@ export class SocietyModel extends Model {
             const hash = await this.fetchStatsSha()
             if (hash != this.__getPrevHash()){
                 this.__setPrevHash(hash)
-                const r = await fetch(this.get().currencyRouteAPI() + `/society`)
-                if (r.status == 200){
-                    let stats = await r.json() as ISocietyStats
+                const res = await axios(this.get().currencyRouteAPI() + `/society`, {
+                    validateStatus: function (status) {
+                        return status >= 200 && status <= 500
+                    }
+                })
+                if (res.status == 200){
+                    let stats = res.data as ISocietyStats
                     const p = await proposal.pullByPubKH(stats.constitution.proposal.pubkh)
                     const renderedStats = _.cloneDeep(stats as any) as ILocalSocietyStats
                     if (p){

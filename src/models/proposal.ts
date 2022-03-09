@@ -9,7 +9,7 @@ import { T_FETCHING_FILTER } from '../static/types'
 import Knex from 'knex'
 import { EmbedCollection } from './embed'
 import { SocietyModel } from './society'
-import fetch from 'node-fetch'
+import axios from 'axios'
 import { IHeaderSignature } from '../static/interfaces'
 
 export class ProposalModel extends Model {
@@ -18,10 +18,13 @@ export class ProposalModel extends Model {
 
     static fetchOnChainData = async (society: SocietyModel, pubkhHex: string, headerSig: IHeaderSignature | void): Promise<string | IContentLink> => {
         try {
-            const response = await fetch(society.get().currencyRouteAPI() + '/proposal/' + pubkhHex, {
+            const response = await axios.get(society.get().currencyRouteAPI() + '/proposal/' + pubkhHex, {
                 headers: headerSig as any || {},
+                validateStatus: function (status) {
+                    return status >= 200 && status <= 500
+                }
             })
-            return response.status === 200 ? await response.json() as IContentLink : await response.text() as string
+            return response.status === 200 ? response.data as IContentLink : response.data as string
         } catch (e){
             throw new Error(e)
         }
@@ -29,8 +32,12 @@ export class ProposalModel extends Model {
 
     static fetchProposalContext = async(society: SocietyModel, pubkhHex: string): Promise<string | IProposalContext> => {
         try {
-            const response = await fetch(society.get().currencyRouteAPI() + '/proposal/' + pubkhHex + '/context')
-            return response.status === 200 ? await response.json() as IProposalContext : await response.text() as string
+            const response = await axios.get(society.get().currencyRouteAPI() + '/proposal/' + pubkhHex + '/context', {
+                validateStatus: function (status) {
+                    return status >= 200 && status <= 500
+                }
+            })
+            return response.status === 200 ? response.data as IProposalContext : response.data as string
         } catch (e){
             throw new Error(e)
         }
@@ -144,10 +151,13 @@ export class ProposalCollection extends Collection {
 
     static fetchOnChainData = async (society: SocietyModel, pubKHList: string, headerSig: IHeaderSignature | void): Promise<IContentLink[] | string> => {
         try {
-            const response = await fetch(society.get().currencyRouteAPI() + '/proposals', {
-                headers: Object.assign({ list: pubKHList }, headerSig || {})
+            const response = await axios.get(society.get().currencyRouteAPI() + '/proposals', {
+                headers: Object.assign({ list: pubKHList }, headerSig || {}),
+                validateStatus: function (status) {
+                    return status >= 200 && status <= 500
+                }
             })
-            return response.status == 200 ? await response.json() as IContentLink[] : await response.text() as string
+            return response.status == 200 ? response.data as IContentLink[] : response.data as string
         } catch (e){
             throw new Error(e)
         }

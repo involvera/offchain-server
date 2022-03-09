@@ -5,7 +5,7 @@ import { AliasModel } from './alias'
 import { T_FETCHING_FILTER } from '../static/types'
 import Knex from 'knex'
 import { EmbedCollection } from './embed'
-import fetch from 'node-fetch'
+import axios from 'axios'
 
 import { SocietyModel } from './society'
 
@@ -13,11 +13,14 @@ export class ThreadModel extends Model {
 
     static FetchRewards = async (pubkhs: string, society: SocietyModel) => {
         try {
-            const res = await fetch(society.get().currencyRouteAPI() + '/threads/rewards',{
-                headers: { list: pubkhs }
+            const res = await axios.get(society.get().currencyRouteAPI() + '/threads/rewards',{
+                headers: { list: pubkhs },
+                validateStatus: function (status) {
+                    return status >= 200 && status <= 500
+                }
             })
             if (res.status == 200)
-                return await res.json() as IReactionCount[]
+                return res.data as IReactionCount[]
         } catch(e){
             throw new Error(e)
         }

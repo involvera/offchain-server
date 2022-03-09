@@ -1,5 +1,5 @@
 import express from 'express'
-import fetch from 'node-fetch'
+import axios from 'axios'
 import { ToPubKeyHash, GetAddressFromPubKeyHash } from 'wallet-util'
 import { thread, SocietyModel, embed, ThreadModel } from '../../models'
 import { IContentLink } from 'community-coin-types'
@@ -10,9 +10,13 @@ export const GetAndAssignLinkToThread = async (req: express.Request, res: expres
     try {
         const s = res.locals.society as SocietyModel
         const public_key_hashed = ToPubKeyHash(Buffer.from(public_key, 'hex')).toString('hex')
-        const r = await fetch(s.get().currencyRouteAPI() + `/thread/${public_key_hashed}`)
-        if (r.status == 200){
-            const json = await r.json() as IContentLink
+        const response = await axios(s.get().currencyRouteAPI() + `/thread/${public_key_hashed}`, {
+            validateStatus: function (status) {
+                return status >= 200 && status <= 500
+            }
+        })
+        if (response.status == 200){
+            const json = response.data as IContentLink
             req.body = Object.assign(req.body, {
                 author: GetAddressFromPubKeyHash(Buffer.from(json.pubkh_origin, 'hex')),
                 public_key_hashed,
@@ -21,8 +25,8 @@ export const GetAndAssignLinkToThread = async (req: express.Request, res: expres
             })
             next()
         } else {
-            const text = await r.text()
-            res.status(r.status)
+            const text = response.data
+            res.status(response.status)
             res.json({error: text})
             return
         }
