@@ -7,6 +7,7 @@ import { ProposalModel } from './proposal';
 import { ThreadModel } from './thread';
 import { ArrayObjToDoubleArray, MixArraysToArrayObj } from '../utils/express';
 import society, { SocietyCollection, SocietyModel } from './society';
+import { cachedSocieties } from '.';
 
 export class EmbedModel extends Model {
 
@@ -50,13 +51,13 @@ export class EmbedCollection extends Collection {
         let currentSociety = society.newNode({}) as SocietyModel
         let societies = society.new([]) as SocietyCollection
         try {
-            currentSociety = await society.fetchByID(sid)
+            currentSociety = cachedSocieties.local().find({id: sid}) as SocietyModel
         } catch(e){
             throw e;
         }
         _.remove(societiesName, currentSociety.get().pathName())
         if (societiesName.length > 0)
-            societies = await society.pullByPathName(societiesName)
+            societies = cachedSocieties.local().filter({ path_name: societiesName}).parent() as SocietyCollection
 
         societies.local().push(currentSociety)
         let embeds = []

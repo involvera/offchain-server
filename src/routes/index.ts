@@ -5,6 +5,7 @@ import initSociety from './society'
 import initThread from './thread/routes'
 import initAdmin from './admin'
 import initEmbeds from './embed'
+import initPuts from './puts'
 
 export const initRoutes = (server: express.Express) => {
 
@@ -21,4 +22,5 @@ export const initRoutes = (server: express.Express) => {
     initThread(server)
     initAdmin(server)
     initEmbeds(server)
+    initPuts(server)
 }

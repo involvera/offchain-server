@@ -121,10 +121,6 @@ export class SocietyCollection extends Collection {
           const res = await this.quick().pull().run()
           this.local().set(res.local().to().plain())
     }
-
-    fetchByID = async (id: number) => await this.quick().find({id}) as SocietyModel
-
-    pullByPathName = async (pathName: string[]) => await this.copy().sql().pull().whereIn('path_name', pathName).run() as SocietyCollection
 }
 
 export default new SocietyCollection([], {table: 'societies'})
