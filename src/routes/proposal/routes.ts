@@ -2,14 +2,13 @@ import express from 'express'
 import { proposal }  from '../../models'
 import { bodyAssignator } from '../../utils'
 import { CheckIfProposalAlreadyRecorded, GetAndAssignLinkToProposal, CheckSignatureContent, CheckContent, BuildEmbed } from './middleware'
-import { GetProposalList, GetProposal, PostProposal, GetLastProposal } from './methods'
+import { GetProposalList, GetProposal, PostProposal } from './methods'
 import { CheckIfSocietyExistsByBodyParam, CheckIfSocietyExistsByRouteParam } from '../society'
 import { CheckIfAliasExist } from '../alias'
 
 export default (server: express.Express) => { 
 
     const { schemaValidator } = proposal.expressTools().middleware()
-    const { postHandler } = proposal.expressTools().request()
 
     server.post('/proposal', 
         bodyAssignator((req: express.Request) => {
@@ -25,8 +24,6 @@ export default (server: express.Express) => {
         BuildEmbed,
         PostProposal
     )
-
-    server.get('/proposal/:sid/last', CheckIfSocietyExistsByRouteParam, GetLastProposal)
 
     server.get('/proposal/:sid/:index', CheckIfSocietyExistsByRouteParam, GetProposal)
 
