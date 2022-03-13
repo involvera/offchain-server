@@ -3,10 +3,11 @@ import { proposal, ProposalCollection, ProposalModel, SocietyModel } from '../..
 import { getHeaderSignature } from './lib'
 
 export const GetProposalList = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    const { page } = req.headers
+    const { offset } = req.headers
 
     try {
-        const list = await proposal.pullBySID(parseInt(req.params.sid), !page ? 0 : parseInt(page as string))
+        console.log(offset)
+        const list = await proposal.pullBySID(parseInt(req.params.sid), parseInt(offset as string))
         const l = list.local().orderBy('index', 'desc') as ProposalCollection
         const s = res.locals.society as SocietyModel
         res.status(200).json(await l.renderJSON('preview', s, getHeaderSignature(req)))

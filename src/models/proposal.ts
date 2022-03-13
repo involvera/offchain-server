@@ -188,7 +188,7 @@ export class ProposalCollection extends Collection {
         }) as ProposalCollection
     }
 
-    pullBySID = async (sid: number, page: number) => await this.copy().sql().pull().where({sid}).orderBy('created_at', 'desc').offset(page * 5).limit((page+1) * 5).run() as ProposalCollection
+    pullBySID = async (sid: number, offset: number) => await this.copy().sql().pull().where({sid}).orderBy('created_at', 'desc').offset(offset).limit(5).run() as ProposalCollection
 
     renderJSON = async (filter: T_FETCHING_FILTER, society: SocietyModel,  headerSig: IHeaderSignature | void) => {
         society && await this.pullOnChainData(society, headerSig)
