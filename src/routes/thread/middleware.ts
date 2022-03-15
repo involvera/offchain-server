@@ -65,9 +65,26 @@ export const BuildEmbed = async (req: express.Request, res: express.Response, ne
         try {
             await embed.create().thread(t)
         } catch (err){
-            console.log(err)
             res.status(500)
             res.json(err.toString())
+        }
+    }
+    next()
+}
+
+export const CheckContentOrTitlePresence = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const { title, content } = req.body
+    if (!title){
+        if (content.length < 20){
+            res.status(406)
+            res.json(`Thread's content must contain 20 characters minimum.`)
+            return
+        }
+    } else if (!content){
+        if (title.length < 20){
+            res.status(406)
+            res.json(`Thread's title must contain 20 characters minimum.`)
+            return
         }
     }
     next()

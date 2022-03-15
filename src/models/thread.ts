@@ -36,8 +36,8 @@ export class ThreadModel extends Model {
         public_key_hashed: Joi.string().length(40).max(40).hex().required().group(['preview', 'view', 'full']),
         signature: Joi.string().max(200).hex().required().group(['full']),
 
-        title: Joi.string().min(0).max(140).group(['preview', 'view', 'full']),
-        content: Joi.string().min(20).max(5000).required().group(['view', 'full']),
+        title: Joi.string().min(0).max(100).default('').group(['preview', 'view', 'full']),
+        content: Joi.string().min(0).max(5000).default('').group(['preview', 'view', 'full']),
 
         content_link: Joi.string().required().group(['preview', 'view', 'full']),
         created_at: Joi.date().default('now').group(['preview', 'view', 'full']),
