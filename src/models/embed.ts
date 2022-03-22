@@ -1,13 +1,22 @@
 import _ from 'lodash'
 import { Joi, Collection, Model } from 'elzeard'
 import Knex from 'knex'
-import { ParseEmbedInText, TEmbedType } from 'involvera-content-embedding';
+import { ParseEmbedInText } from 'involvera-content-embedding';
+import { TPubKHContent } from 'wallet-script'
 
 import { ProposalModel } from './proposal';
 import { ThreadModel } from './thread';
 import { ArrayObjToDoubleArray, MixArraysToArrayObj } from '../utils/express';
 import society, { SocietyCollection, SocietyModel } from './society';
-import { cachedSocieties } from '.';
+import { cachedSocieties, embed } from '.';
+
+export interface IPostEmbed {
+    public_key_hashed: string
+    index: number
+    type: TPubKHContent,
+    content: string
+    sid: number
+}
 
 export class EmbedModel extends Model {
 
@@ -16,7 +25,7 @@ export class EmbedModel extends Model {
         created_at: Joi.date().default('now'),
         public_key_hashed: Joi.string().min(0).max(40).hex(),
         index: Joi.number().max(2_000_000_000), 
-        type: Joi.string().allow('proposal', 'thread').required(),
+        type: Joi.string().allow('PROPOSAL', 'THREAD').required(),
         sid: Joi.number().foreignKey('societies', 'id').noPopulate().required(),
         content: Joi.string().max(1000).group(['preview'])
     })
@@ -29,7 +38,7 @@ export class EmbedModel extends Model {
         return {
             id: (): number => this.state.id,
             content: (): string => this.state.content,
-            type: (): TEmbedType => this.state.type,
+            type: (): TPubKHContent => this.state.type,
             index: (): number | -1 => this.state.index,
             pubKH: (): string | null => this.state.public_key_hashed,
             createdAt: (): Date => this.state.created_at
@@ -70,10 +79,10 @@ export class EmbedCollection extends Collection {
         }
         embeds = _.uniqWith(embeds, _.isEqual)
         return await embedTable.pullByIndexesOrPKHs(
-            embeds.filter((e) => e.type === 'proposal').map((e) => e.society),
-            embeds.filter((e) => e.type === 'proposal').map((e) => e.index),
-            embeds.filter((e) => e.type === 'thread').map((e) => e.society),
-            embeds.filter((e) => e.type === 'thread').map((e) => e.pkh)
+            embeds.filter((e) => e.type === 'PROPOSAL').map((e) => e.society),
+            embeds.filter((e) => e.type === 'PROPOSAL').map((e) => e.index),
+            embeds.filter((e) => e.type === 'THREAD').map((e) => e.society),
+            embeds.filter((e) => e.type === 'THREAD').map((e) => e.pkh)
         )
     }
     
@@ -82,13 +91,18 @@ export class EmbedCollection extends Collection {
     }
 
     create = () => {
-        const thread = async (t: ThreadModel) => await this.copy().quick().create(t.toEmbedData()) as EmbedModel
-        const proposal = async (p: ProposalModel) => await this.copy().quick().create(p.toEmbedData()) as EmbedModel
+        const thread = async (t: ThreadModel) => {
+            const target = await t.get().target()
+            return await this.copy().quick().create(t.toEmbedData(target)) as EmbedModel
+        }
+        const proposal = async (p: ProposalModel) => {
+            return await this.copy().quick().create(p.toEmbedData()) as EmbedModel
+        }
 
         return { thread, proposal }
     }
 
-    fetchByPKH = async (sid: number, public_key_hashed: string) => await this.quick().find({sid, public_key_hashed}) as EmbedModel
+    fetchByPKH = async (sid: number, public_key_hashed: string, type: TPubKHContent) => await this.quick().find({sid, public_key_hashed, type}) as EmbedModel
     fetchByIndex = async (sid: number, index: number) => await this.quick().find({sid, index}) as EmbedModel
 
     pullByIndexesOrPKHs = async (sidIDX: number[], indexes: number[], sidPKH: number[], pkhs: string[]) => {

@@ -1,13 +1,13 @@
-import _ from 'lodash'
+import _, { times } from 'lodash'
 import { Joi, Collection, Model } from 'elzeard'
 import { IContentLink, IKindLinkUnRaw, IVoteSummary, IProposalContext } from 'community-coin-types'
-import { BuildProposalPreviewString} from 'involvera-content-embedding'
+import { BuildProposalPreviewString, IPreview, IProposalPreview} from 'involvera-content-embedding'
 import { AliasModel } from './alias'
 import { ScriptEngine } from 'wallet-script'
 import { ToArrayBufferFromB64 } from 'wallet-util'
 import { T_FETCHING_FILTER } from '../static/types'
 import Knex from 'knex'
-import { EmbedCollection } from './embed'
+import { EmbedCollection, IPostEmbed } from './embed'
 import { SocietyModel } from './society'
 import axios from 'axios'
 import { IHeaderSignature } from '../static/interfaces'
@@ -53,7 +53,7 @@ export class ProposalModel extends Model {
         signature: Joi.string().max(200).hex().required().group(['full']),
 
         index: Joi.number().required().group(['preview', 'view', 'full']),
-        title: Joi.string().max(120).required().group(['preview', 'view', 'full']),
+        title: Joi.string().max(100).min(10).required().group(['preview', 'view', 'full']),
         content: Joi.string().required().group(['view', 'full']),
 
         created_at: Joi.date().default('now').group(['preview', 'view', 'full']),
@@ -73,12 +73,12 @@ export class ProposalModel extends Model {
 
     getOnChainData = (): IContentLink | null => this._onChainData
 
-    toEmbedData = () => {
+    toEmbedData = (): IPostEmbed => {
         return {
             public_key_hashed: null as string,
             index: this.get().index(),
-            type: "proposal",
-            content: this.get().preview().embed_code,
+            type: 'PROPOSAL',
+            content: this.get().preview().zipped().embed_code,
             sid: this.get().sid()
         }
     }
@@ -95,11 +95,28 @@ export class ProposalModel extends Model {
     }
 
     get = () => {
-        return {
-            preview: () => {
+
+        const preview = () => {
+
+            const unzipped = (): IProposalPreview => {
                 const link = this.get().contentLink()
-                return BuildProposalPreviewString(this.get().index(), new ScriptEngine(ToArrayBufferFromB64(link.output.script)).proposalContentTypeString(), this.get().createdAt(), this.get().vote(), this.get().title(), this.get().sid())
-            },
+                return {
+                    index: this.get().index(),
+                    layer: new ScriptEngine(ToArrayBufferFromB64(link.output.script)).proposalContentTypeString(),
+                    created_at: this.get().createdAt(),
+                    vote: this.get().vote(),
+                    title: this.get().title(),
+                    sid: this.get().sid()
+                }
+            }
+
+            const zipped = (): IPreview => BuildProposalPreviewString(unzipped())
+            
+            return { unzipped, zipped }
+        }
+
+        return {
+            preview,
             embeds: async () => {
                 const list = await EmbedCollection.FetchEmbeds(this.get().content(), this.get().sid())
                 return list.local().to().filterGroup('preview').plain().map((c: any) => c.content) as string[]
@@ -127,8 +144,9 @@ export class ProposalModel extends Model {
 
     renderJSON = async (filter: T_FETCHING_FILTER, society: SocietyModel | void, headerSig: IHeaderSignature | void) => {
         let embeds: string[] = []
-        if (filter != 'preview')
+        if (filter != 'preview'){
             embeds = await this.get().embeds()
+        }
         if (society)
             await this.pullOnChainData(society, headerSig)
         this.prepareJSONRendering()
@@ -173,15 +191,9 @@ export class ProposalCollection extends Collection {
         return res.local().count() == 0 ? null : res.local().nodeAt(0) as ProposalModel
     }
 
-    fetchByPubK = async (public_key: string) => await this.quick().find({ public_key }) as ProposalModel
     fetchByIndex = async (sid: number, index: number) => await this.quick().find({sid, index}) as ProposalModel
-
-    pullByPubKHs = async (pubkhs: string[]) => await this.ctx().sql().pull().whereIn('public_key_hashed', pubkhs).run()
-    pullByPubKH = async (pubkh: string): Promise<ProposalModel | null> => {
-        const ret = await this.quick().find('public_key_hashed', pubkh) as ProposalModel
-        return !!ret ? ret as ProposalModel : null
-    }
-
+    fetchByPubKH = async (sid: number, public_key_hashed: string) => await this.quick().find({public_key_hashed, sid}) as ProposalModel
+    
     pullByIndexes = async (sid: number, indexes: number[]) => {
         return await this.copy().sql().pull().custom((q: Knex.QueryBuilder): any => {
             return q.where({sid}).whereIn('index', indexes)

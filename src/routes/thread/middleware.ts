@@ -51,12 +51,13 @@ export const CheckIfThreadAlreadyRecorded = async (req: express.Request, res: ex
 
 export const BuildEmbed = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const { public_key, sid } = req.body
-    const e = await embed.fetchByPKH(parseInt(sid), ToPubKeyHash(Buffer.from(public_key, 'hex')).toString('hex'))
+    const e = await embed.fetchByPKH(parseInt(sid), ToPubKeyHash(Buffer.from(public_key, 'hex')).toString('hex'), 'THREAD')
     const t = new ThreadModel(req.body, {}).setState({ author: res.locals.alias }, true)
 
     if (e){
         try {
-            await e.setState({ content: t.get().preview().embed_code }).saveToDB()
+            const target = await t.get().target()
+            await e.setState({ content: t.get().preview(target).zipped().embed_code }).saveToDB()
         } catch(err){
             res.status(500)
             res.json(err.toString())

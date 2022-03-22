@@ -74,7 +74,7 @@ export class SocietyModel extends Model {
                 })
                 if (res.status == 200){
                     let stats = res.data as ISocietyStats
-                    const p = await proposal.pullByPubKH(stats.constitution.proposal.pubkh)
+                    const p = await proposal.fetchByPubKH(this.get().ID(), stats.constitution.proposal.pubkh)
                     const renderedStats = _.cloneDeep(stats as any) as ILocalSocietyStats
                     if (p){
                         await p.pullOnChainData(this)

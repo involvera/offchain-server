@@ -20,12 +20,12 @@
     "express": "^4.17.2",
     "express-form-data": "^2.0.17",
     "express-rate-limit": "^5.2.6",
-    "involvera-content-embedding": "^1.0.5",
+    "involvera-content-embedding": "^1.0.8",
     "lodash": "^4.17.21",
     "markdown-it": "^12.0.6",
     "morgan": "^1.10.0",
     "strip-markdown": "^4.0.0",
-    "wallet-script": "^1.0.4",
+    "wallet-script": "^1.0.6",
     "wallet-util": "^1.0.4"
   },
   "devDependencies": {

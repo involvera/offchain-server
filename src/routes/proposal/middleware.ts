@@ -37,8 +37,9 @@ export const CheckSignatureContent = (req: express.Request, res: express.Respons
 
 export const CheckIfProposalAlreadyRecorded = async (req: express.Request, res: express.Response, next: express.NextFunction) => { 
     const { public_key } = req.body
-    
-    const p = await proposal.fetchByPubK(public_key)
+    const s = res.locals.society as SocietyModel
+
+    const p = await proposal.fetchByPubKH(s.get().ID(), ToPubKeyHash(Buffer.from(public_key, 'hex')).toString('hex'))
     if (p == null){
         next()
         return
@@ -91,7 +92,7 @@ export const BuildEmbed = async (req: express.Request, res: express.Response, ne
     
     if (e){
         try {
-            await e.setState({ content: p.get().preview().embed_code }).saveToDB()
+            await e.setState({ content: p.get().preview().zipped().embed_code }).saveToDB()
         } catch(err){
             res.status(500)
             res.json(err.toString())

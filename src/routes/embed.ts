@@ -7,7 +7,7 @@ export default (server: express.Express) => {
         async (req: express.Request, res: express.Response, next: express.NextFunction) => {
             const { pkh, sid } = req.params
             try {
-                const e = await embed.fetchByPKH(parseInt(sid), pkh)
+                const e = await embed.fetchByPKH(parseInt(sid), pkh, 'THREAD')
                 if (e){
                     res.status(200)
                     res.json(e.to().plain())
