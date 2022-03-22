@@ -185,21 +185,10 @@ export class ProposalCollection extends Collection {
 
     sortByIndexDesc = () => this.local().orderBy('index', 'desc') as ProposalCollection 
 
-    fetchLast = async () => {
-        const res = await this.quick().pull().orderBy('index','desc').limit(1).run() as ProposalCollection
-        return res.local().count() == 0 ? null : res.local().nodeAt(0) as ProposalModel
-    }
-
     fetchByIndex = async (sid: number, index: number) => await this.quick().find({sid, index}) as ProposalModel
     fetchByPubKH = async (sid: number, public_key_hashed: string) => await this.quick().find({public_key_hashed, sid}) as ProposalModel
-    
-    pullByIndexes = async (sid: number, indexes: number[]) => {
-        return await this.copy().sql().pull().custom((q: Knex.QueryBuilder): any => {
-            return q.where({sid}).whereIn('index', indexes)
-        }) as ProposalCollection
-    }
 
-    pullBySID = async (sid: number, offset: number) => await this.copy().sql().pull().where({sid}).orderBy('created_at', 'desc').offset(offset).limit(5).run() as ProposalCollection
+    pullLastsBySID = async (sid: number, offset: number) => await this.copy().sql().pull().where({sid}).orderBy('created_at', 'desc').offset(offset).limit(5).run() as ProposalCollection
 
     renderPreview = async (society: SocietyModel, headerSig: IHeaderSignature | void) => {
         society && await this.pullOnChainData(society, headerSig)

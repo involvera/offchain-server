@@ -8,7 +8,7 @@ import { ProposalModel } from './proposal';
 import { ThreadModel } from './thread';
 import { ArrayObjToDoubleArray, MixArraysToArrayObj } from '../utils/express';
 import society, { SocietyCollection, SocietyModel } from './society';
-import { cachedSocieties, embed } from '.';
+import { cachedSocieties } from '.';
 
 export interface IPostEmbed {
     public_key_hashed: string
@@ -95,9 +95,7 @@ export class EmbedCollection extends Collection {
             const target = await t.get().target()
             return await this.copy().quick().create(t.toEmbedData(target)) as EmbedModel
         }
-        const proposal = async (p: ProposalModel) => {
-            return await this.copy().quick().create(p.toEmbedData()) as EmbedModel
-        }
+        const proposal = async (p: ProposalModel) => await this.copy().quick().create(p.toEmbedData()) as EmbedModel
 
         return { thread, proposal }
     }
@@ -140,7 +138,7 @@ export class EmbedCollection extends Collection {
         return  await this.copy().sql().pull().whereIn(SET_SID_PKH, ArrayObjToDoubleArray(arr, SET_SID_PKH)).run() as EmbedCollection        
     }
 
-    pullByIDs = async (ids: number[]) => await this.copy().quick().pull('id', ids).run() as EmbedCollection
+    // pullByIDs = async (ids: number[]) => await this.copy().quick().pull('id', ids).run() as EmbedCollection
 }
 
 

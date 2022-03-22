@@ -82,6 +82,7 @@ export const BuildEmbed = async (req: express.Request, res: express.Response, ne
     const e = await embed.fetchByIndex(parseInt(sid), parseInt(index))
     const s = res.locals.society as SocietyModel
     const p = new ProposalModel(req.body, {})
+
     try {
         await p.pullOnChainData(s)
     } catch (e){

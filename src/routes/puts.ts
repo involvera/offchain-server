@@ -1,8 +1,7 @@
-import express, { response } from 'express'
+import express from 'express'
 import axios from 'axios'
 import { GetAddressFromPubKeyHash, ToPubKeyHash,  } from 'wallet-util'
 import { Constant } from 'wallet-script'
-import { IUnSerializedPut } from 'community-coin-types'
 
 import { SocietyModel, alias, AliasModel } from '../models'
 import { CheckIfSocietyExistsByRouteParam } from './society'

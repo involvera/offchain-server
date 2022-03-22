@@ -71,15 +71,15 @@ export default (server: express.Express) => {
         }
     )
 
-    server.get('/embed/list/:ids', async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-        const ids = JSON.parse(req.params.ids)
-        try {
-            const list = await embed.pullByIDs(ids)
-            res.status(200)
-            res.json(list.local().to().plain())
-        } catch (e){
-            res.status(500)
-            res.json(e.toString())  
-        }
-    })
+    // server.get('/embed/list/:ids', async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    //     const ids = JSON.parse(req.params.ids)
+    //     try {
+    //         const list = await embed.pullByIDs(ids)
+    //         res.status(200)
+    //         res.json(list.local().to().plain())
+    //     } catch (e){
+    //         res.status(500)
+    //         res.json(e.toString())  
+    //     }
+    // })
 }

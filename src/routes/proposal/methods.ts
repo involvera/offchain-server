@@ -7,7 +7,7 @@ export const GetProposalList = async (req: express.Request, res: express.Respons
 
     try {
         const s = res.locals.society as SocietyModel
-        const list = await proposal.pullBySID(parseInt(req.params.sid), parseInt(offset as string))
+        const list = await proposal.pullLastsBySID(parseInt(req.params.sid), parseInt(offset as string))
         res.status(200).json(await list.sortByIndexDesc().renderPreview(s, getHeaderSignature(req)))
     } catch (e){
         res.status(500).json(e.toString())
