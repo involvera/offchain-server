@@ -38,8 +38,9 @@ export const GetAndAssignLinkToThread = async (req: express.Request, res: expres
 
 export const CheckIfThreadAlreadyRecorded = async (req: express.Request, res: express.Response, next: express.NextFunction) => { 
     const { public_key } = req.body
-    
-    const p = await thread.fetchByPubK(public_key)
+    const s = res.locals.society as SocietyModel
+
+    const p = await thread.fetchByPubKH(s.get().ID(), ToPubKeyHash(Buffer.from(public_key, 'hex')).toString('hex'))
     if (p == null){
         next()
         return

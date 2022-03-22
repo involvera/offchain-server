@@ -1,15 +1,15 @@
 import { Joi, Collection, Model } from 'elzeard'
-import {  IKindLinkUnRaw, IReactionCount } from 'community-coin-types'
+import {  IKindLinkUnRaw, IReactionCount, IRewardCollectionPut } from 'community-coin-types'
 import { BuildThreadPreviewString, IPreview, IProposalPreview, IThreadPreview } from 'involvera-content-embedding'
 import { AliasModel } from './alias'
 import { ScriptEngine } from 'wallet-script'
 import { ToArrayBufferFromB64 } from 'wallet-util'
 import { T_FETCHING_FILTER } from '../static/types'
 import Knex from 'knex'
-import { EmbedCollection, IPostEmbed } from './embed'
+import { EmbedCollection, EmbedModel, IPostEmbed } from './embed'
 import axios from 'axios'
 
-import { SocietyModel } from './society'
+import society, { SocietyModel } from './society'
 import proposal, { ProposalModel } from './proposal'
 import { thread, embed } from '.'
 
@@ -24,7 +24,7 @@ export class ThreadModel extends Model {
                 }
             })
             if (res.status == 200)
-                return res.data as IReactionCount[]
+                return res.data as IRewardCollectionPut[]
         } catch(e){
             throw new Error(e)
         }
@@ -133,19 +133,11 @@ export class ThreadModel extends Model {
 
     prepareJSONRendering = () => this.setState({ content_link: this.get().contentLink() }, true)
 
-    renderJSON = async (filter: T_FETCHING_FILTER, society: SocietyModel | null)  => {
-        let embeds: string[] = []
-        if (filter != 'preview')
-            embeds = await this.get().contentEmbeds()
+    renderView = async (society: SocietyModel | null)  => {
+        const embeds = await this.get().contentEmbeds()
         this.prepareJSONRendering()
-        const json = this.to().filterGroup(filter).plain()
-        if (filter == 'preview'){
-            json.preview = await this.get().embedString()
-        }
-        if (society != null){
-            json.rewards = (await this.getRewards(society))[0]
-            
-        }
+        const json = this.to().filterGroup('view').plain()
+        json.rewards = (await this.getRewards(society))[0]
         json.embeds = embeds
         return json
     }
@@ -158,25 +150,30 @@ export class ThreadCollection extends Collection {
 
     fetchRewards = async (society: SocietyModel) => ThreadModel.FetchRewards(this.local().map((t: ThreadModel) => t.get().pubKH()).join(','), society)
 
-    fetchByPubK = async (public_key: string) => await this.quick().find({ public_key }) as ThreadModel
     fetchByPubKH = async (sid: number, public_key_hashed: string) => await this.quick().find({ sid, public_key_hashed }) as ThreadModel
  
     pullBySID = async (sid: number, page: number) => await this.ctx().sql().pull().where({sid}).orderBy('created_at', 'desc').offset(page * 10).limit((page+1) * 10).run() as ThreadCollection    
-    pullByPubKHs = async (sid: number, pubkhs: string[]) => {
-        return await this.ctx().sql().pull().custom((q: Knex.QueryBuilder): any => {
-            return q.where({sid}).whereIn('public_key_hashed', pubkhs)
-        }) as ThreadCollection
-    }
     
-    //Improve this method to execute only ONE getRewards request to pull all the rewards count at once.
-    renderJSON = async (filter: T_FETCHING_FILTER, society:SocietyModel) => {
-        const list = await this.fetchRewards(society)
-        let i = 0;
-        return Promise.all(this.local().map(async (t: ThreadModel) => {
-            const a = Object.assign({}, await t.renderJSON(filter, null), list[i])
-            i++
-            return a
-        }))
+    renderPreviewList = async (society: SocietyModel) => {
+        const listRewards = await this.fetchRewards(society)
+        const listEmbeds = await embed.pullBySidsAndPKHs(this.local().map((t: ThreadModel) => t.get().sid()), this.local().map((t: ThreadModel) => t.get().pubKH()))
+        listEmbeds.local().removeBy({type: 'PROPOSAL'})
+
+        interface IPreviewThread{
+            preview_code: string
+            reaction: IReactionCount
+        }
+
+        const ret: IPreviewThread[] = []
+        for (let i = 0; i < listRewards.length; i++){
+            ret.push({reaction: listRewards[i].reaction_count, preview_code: ''})
+            const e = listEmbeds.local().find({ public_key_hashed: (this.local().nodeAt(i) as ThreadModel).get().pubKH() }) as EmbedModel
+            if (e){
+                ret[i].preview_code = e.get().content()
+            }
+        }
+
+        return ret
     }
 }
 

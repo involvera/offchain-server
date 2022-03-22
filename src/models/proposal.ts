@@ -1,16 +1,17 @@
 import _, { times } from 'lodash'
 import { Joi, Collection, Model } from 'elzeard'
-import { IContentLink, IKindLinkUnRaw, IVoteSummary, IProposalContext } from 'community-coin-types'
+import { IContentLink, IKindLinkUnRaw, IVoteSummary, IProposalContext, IUserVote } from 'community-coin-types'
 import { BuildProposalPreviewString, IPreview, IProposalPreview} from 'involvera-content-embedding'
 import { AliasModel } from './alias'
 import { ScriptEngine } from 'wallet-script'
 import { ToArrayBufferFromB64 } from 'wallet-util'
 import { T_FETCHING_FILTER } from '../static/types'
 import Knex from 'knex'
-import { EmbedCollection, IPostEmbed } from './embed'
+import { EmbedCollection, EmbedModel, IPostEmbed } from './embed'
 import { SocietyModel } from './society'
 import axios from 'axios'
 import { IHeaderSignature } from '../static/interfaces'
+import { embed } from '.'
 
 export class ProposalModel extends Model {
 
@@ -142,15 +143,12 @@ export class ProposalModel extends Model {
         }, true)
     }
 
-    renderJSON = async (filter: T_FETCHING_FILTER, society: SocietyModel | void, headerSig: IHeaderSignature | void) => {
-        let embeds: string[] = []
-        if (filter != 'preview'){
-            embeds = await this.get().embeds()
-        }
+    renderView = async (society: SocietyModel | null, headerSig: IHeaderSignature | void) => {
+        const embeds = await this.get().embeds()
         if (society)
             await this.pullOnChainData(society, headerSig)
         this.prepareJSONRendering()
-        const json = this.to().filterGroup(filter).plain()
+        const json = this.to().filterGroup('view').plain()
         json.embeds = embeds
         return Object.assign(json, {
             content_link: this.state.content_link,
@@ -185,6 +183,7 @@ export class ProposalCollection extends Collection {
         super(initialState, [ProposalModel, ProposalCollection], options)
     }
 
+    sortByIndexDesc = () => this.local().orderBy('index', 'desc') as ProposalCollection 
 
     fetchLast = async () => {
         const res = await this.quick().pull().orderBy('index','desc').limit(1).run() as ProposalCollection
@@ -202,12 +201,28 @@ export class ProposalCollection extends Collection {
 
     pullBySID = async (sid: number, offset: number) => await this.copy().sql().pull().where({sid}).orderBy('created_at', 'desc').offset(offset).limit(5).run() as ProposalCollection
 
-    renderJSON = async (filter: T_FETCHING_FILTER, society: SocietyModel,  headerSig: IHeaderSignature | void) => {
+    renderPreview = async (society: SocietyModel, headerSig: IHeaderSignature | void) => {
         society && await this.pullOnChainData(society, headerSig)
-        const list = await Promise.all(this.local().map(async (p: ProposalModel) => {
-            return await p.renderJSON(filter, null)
-        }))
-        return list
+        const listEmbeds = await embed.pullBySidsAndIndexes(this.local().map((p: ProposalModel) => p.get().sid()), this.local().map((p: ProposalModel) => p.get().index()))
+
+        interface IPreviewProposal{
+            preview_code: string
+            user_vote: IUserVote
+            vote: IVoteSummary
+        }
+
+        const ret: IPreviewProposal[] = []
+        for (let i = 0; i < this.local().count(); i++){
+            const p = this.local().nodeAt(i) as ProposalModel
+            const { user_vote, vote } = p.getOnChainData()
+            ret.push({user_vote, vote, preview_code: ''})
+            const e = listEmbeds.local().find({ index: (this.local().nodeAt(i) as ProposalModel).get().index() }) as EmbedModel
+            if (e){
+                ret[i].preview_code = e.get().content()
+            }
+        }
+
+        return ret
     }
 
     pullOnChainData = async (society: SocietyModel, headerSig: IHeaderSignature | void) => {

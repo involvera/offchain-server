@@ -7,8 +7,7 @@ export const GetThreadList = async (req: express.Request, res: express.Response,
     try {
         const s = res.locals.society as SocietyModel
         const list = await thread.pullBySID(s.get().ID(), !page ? 0 : parseInt(page as string))
-        const content = await list.renderJSON('preview', s)
-        res.status(200).json(content)
+        res.status(200).json(await list.renderPreviewList(s))
     } catch (e){
         res.status(500).json(e.toString())
     }
@@ -20,7 +19,7 @@ export const GetThread = async (req: express.Request, res: express.Response, nex
     try {
         const s = res.locals.society as SocietyModel
         const t = await thread.fetchByPubKH(s.get().ID(), pubkh)
-        t ? res.status(200).json(await t.renderJSON('view', s)) : res.sendStatus(404)
+        t ? res.status(200).json(await t.renderView(s)) : res.sendStatus(404)
     } catch (e){
         res.status(500).json(e.toString())
     }
