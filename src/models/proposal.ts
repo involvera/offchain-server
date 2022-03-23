@@ -1,16 +1,14 @@
-import _, { times } from 'lodash'
+import _ from 'lodash'
 import { Joi, Collection, Model } from 'elzeard'
-import { IContentLink, IKindLinkUnRaw, IVoteSummary, IProposalContext, IUserVote } from 'community-coin-types'
+import { IContentLink, IKindLinkUnRaw, IVoteSummary, IProposalContext } from 'community-coin-types'
 import { BuildProposalPreviewString, IPreview, IProposalPreview} from 'involvera-content-embedding'
 import { AliasModel } from './alias'
 import { ScriptEngine } from 'wallet-script'
 import { ToArrayBufferFromB64 } from 'wallet-util'
-import { T_FETCHING_FILTER } from '../static/types'
-import Knex from 'knex'
-import { EmbedCollection, EmbedModel, IPostEmbed } from './embed'
+import { EmbedCollection, EmbedModel } from './embed'
 import { SocietyModel } from './society'
 import axios from 'axios'
-import { IHeaderSignature } from '../static/interfaces'
+import { IHeaderSignature, IPreviewProposal, IPostEmbed } from '../static/interfaces'
 import { embed } from '.'
 
 export class ProposalModel extends Model {
@@ -193,12 +191,6 @@ export class ProposalCollection extends Collection {
     renderPreview = async (society: SocietyModel, headerSig: IHeaderSignature | void) => {
         society && await this.pullOnChainData(society, headerSig)
         const listEmbeds = await embed.pullBySidsAndIndexes(this.local().map((p: ProposalModel) => p.get().sid()), this.local().map((p: ProposalModel) => p.get().index()))
-
-        interface IPreviewProposal{
-            preview_code: string
-            user_vote: IUserVote
-            vote: IVoteSummary
-        }
 
         const ret: IPreviewProposal[] = []
         for (let i = 0; i < this.local().count(); i++){

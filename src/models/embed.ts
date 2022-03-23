@@ -10,14 +10,6 @@ import { ArrayObjToDoubleArray, MixArraysToArrayObj } from '../utils/express';
 import society, { SocietyCollection, SocietyModel } from './society';
 import { cachedSocieties } from '.';
 
-export interface IPostEmbed {
-    public_key_hashed: string
-    index: number
-    type: TPubKHContent,
-    content: string
-    sid: number
-}
-
 export class EmbedModel extends Model {
 
     static schema = Joi.object({
@@ -45,7 +37,6 @@ export class EmbedModel extends Model {
         }
     }
 }
-
 
 const SET_SID_IDX = ['sid', 'index']
 const SET_SID_PKH = ['sid', 'public_key_hashed']

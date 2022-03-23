@@ -1,28 +1,10 @@
 import _ from 'lodash'
 import { Joi, Collection, Model } from 'elzeard'
 import axios from 'axios'
-import proposal, { ProposalModel } from './proposal'
-import { ISocietyStats, ICostProposal, IConstitutionRule, ICostHistory } from 'community-coin-types'
+import { proposal } from './'
+import { ISocietyStats  } from 'community-coin-types'
+import {  ILocalSocietyStats } from '../static/interfaces'
 
-export interface IConstitutionData {
-    proposal: ProposalModel
-    constitution: IConstitutionRule[]
-}
-
-export interface ILocalSocietyStats {
-    id: number
-    name: string
-    created_at: Date
-    currency_symbol: string
-    description: string
-    domain: string,
-    currency_route_api: string
-    stats: ISocietyStats
-    costs: ICostProposal
-    constitution: IConstitutionData
-    last_thread_cost_change_proposal: ICostHistory
-    last_proposal_cost_change_proposal: ICostHistory
-}
 
 export class SocietyModel extends Model {
 

@@ -1,17 +1,16 @@
 import { Joi, Collection, Model } from 'elzeard'
-import {  IKindLinkUnRaw, IReactionCount, IRewardCollectionPut } from 'community-coin-types'
+import {  IKindLinkUnRaw, IRewardCollectionPut } from 'community-coin-types'
 import { BuildThreadPreviewString, IPreview, IProposalPreview, IThreadPreview } from 'involvera-content-embedding'
 import { AliasModel } from './alias'
 import { ScriptEngine } from 'wallet-script'
 import { ToArrayBufferFromB64 } from 'wallet-util'
-import { T_FETCHING_FILTER } from '../static/types'
-import Knex from 'knex'
-import { EmbedCollection, EmbedModel, IPostEmbed } from './embed'
+import { IPostEmbed, IPreviewThread } from '../static/interfaces'
+import { EmbedCollection, EmbedModel } from './embed'
 import axios from 'axios'
 
-import society, { SocietyModel } from './society'
-import proposal, { ProposalModel } from './proposal'
-import { thread, embed } from '.'
+import { SocietyModel } from './society'
+import { ProposalModel } from './proposal'
+import { thread, embed, proposal } from '.'
 
 export class ThreadModel extends Model {
 
@@ -159,20 +158,13 @@ export class ThreadCollection extends Collection {
         const listEmbeds = await embed.pullBySidsAndPKHs(this.local().map((t: ThreadModel) => t.get().sid()), this.local().map((t: ThreadModel) => t.get().pubKH()))
         listEmbeds.local().removeBy({type: 'PROPOSAL'})
 
-        interface IPreviewThread{
-            preview_code: string
-            reaction: IReactionCount
-        }
-
         const ret: IPreviewThread[] = []
         for (let i = 0; i < listRewards.length; i++){
             ret.push({reaction: listRewards[i].reaction_count, preview_code: ''})
             const e = listEmbeds.local().find({ public_key_hashed: (this.local().nodeAt(i) as ThreadModel).get().pubKH() }) as EmbedModel
-            if (e){
+            if (e)
                 ret[i].preview_code = e.get().content()
-            }
         }
-
         return ret
     }
 }
