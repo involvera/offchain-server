@@ -22,7 +22,6 @@ export interface IPreviewThread{
     reaction: IReactionCount
 }
 
-
 export interface IPostEmbed {
     public_key_hashed: string
     index: number

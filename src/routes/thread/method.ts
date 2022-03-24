@@ -47,8 +47,9 @@ export const PostThread = async  (req: express.Request, res: express.Response, n
     }
 
     try {
+        const s = res.locals.society as SocietyModel
         const m = await thread.quick().create(data) as ThreadModel
-        res.status(201).json(m.to().filterGroup('view').plain())
+        res.status(201).json(await m.renderView(s))
     } catch (e){
         res.status(500)
         res.json(e.toString())

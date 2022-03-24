@@ -132,11 +132,11 @@ export class ThreadModel extends Model {
 
     prepareJSONRendering = () => this.setState({ content_link: this.get().contentLink() }, true)
 
-    renderView = async (society: SocietyModel | null)  => {
+    renderView = async (society: SocietyModel)  => {
         const embeds = await this.get().contentEmbeds()
         this.prepareJSONRendering()
         const json = this.to().filterGroup('view').plain()
-        json.rewards = (await this.getRewards(society))[0]
+        json.rewards = (await this.getRewards(society))[0].reaction_count
         json.embeds = embeds
         return json
     }
@@ -157,10 +157,10 @@ export class ThreadCollection extends Collection {
         const listRewards = await this.fetchRewards(society)
         const listEmbeds = await embed.pullBySidsAndPKHs(this.local().map((t: ThreadModel) => t.get().sid()), this.local().map((t: ThreadModel) => t.get().pubKH()))
         listEmbeds.local().removeBy({type: 'PROPOSAL'})
-
         const ret: IPreviewThread[] = []
         for (let i = 0; i < listRewards.length; i++){
             ret.push({reaction: listRewards[i].reaction_count, preview_code: ''})
+            console.log(i, this.local().count())
             const e = listEmbeds.local().find({ public_key_hashed: (this.local().nodeAt(i) as ThreadModel).get().pubKH() }) as EmbedModel
             if (e)
                 ret[i].preview_code = e.get().content()
