@@ -160,7 +160,6 @@ export class ThreadCollection extends Collection {
         const ret: IPreviewThread[] = []
         for (let i = 0; i < listRewards.length; i++){
             ret.push({reaction: listRewards[i].reaction_count, preview_code: ''})
-            console.log(i, this.local().count())
             const e = listEmbeds.local().find({ public_key_hashed: (this.local().nodeAt(i) as ThreadModel).get().pubKH() }) as EmbedModel
             if (e)
                 ret[i].preview_code = e.get().content()
