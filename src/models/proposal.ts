@@ -101,6 +101,7 @@ export class ProposalModel extends Model {
                 const link = this.get().contentLink()
                 return {
                     index: this.get().index(),
+                    author: this.get().author().to().plain(),
                     layer: new ScriptEngine(ToArrayBufferFromB64(link.output.script)).proposalContentTypeString(),
                     created_at: this.get().createdAt(),
                     vote: this.get().vote(),

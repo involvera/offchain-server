@@ -1,5 +1,5 @@
 import express from 'express'
-import {proposal, SocietyModel, embed, ProposalModel } from '../../models'
+import {proposal, SocietyModel, embed, ProposalModel, AliasModel } from '../../models'
 import { ToPubKeyHash, GetAddressFromPubKeyHash, VerifySignatureHex, ToArrayBufferFromB64 } from 'wallet-util'
 import { ScriptEngine } from 'wallet-script'
 import { fetchAndPickRightProposalContext } from './lib'
@@ -78,10 +78,12 @@ export const GetAndAssignLinkToProposal = async (req: express.Request, res: expr
 }
 
 export const BuildEmbed = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    const { content, sid, index } = req.body
+    const { sid, index } = req.body
     const e = await embed.fetchByIndex(parseInt(sid), parseInt(index))
     const s = res.locals.society as SocietyModel
-    const p = new ProposalModel(req.body, {})
+    const p = new ProposalModel(Object.assign({}, req.body, {
+        author: res.locals.alias
+    }), {})
 
     try {
         await p.pullOnChainData(s)
