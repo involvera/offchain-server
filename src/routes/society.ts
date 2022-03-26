@@ -1,6 +1,6 @@
 import express from 'express'
 import { alias, cachedSocieties, society, SocietyModel } from '../models' 
-import { CheckAdminKey } from './admin'
+import { CheckAdminKey , CheckIsDevelopment } from './admin'
 
 const getSocietyIfExists = async (sid: number, req: express.Request, res: express.Response, next: express.NextFunction) => {
     try {
@@ -26,6 +26,7 @@ export default (server: express.Express) => {
 
     server.post('/society', 
         CheckAdminKey,
+        CheckIsDevelopment,
         schemaValidator,
         postHandler(['name', 'path_name', 'currency_route_api', 'currency_symbol', 'description', 'domain'])
     )

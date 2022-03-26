@@ -1,5 +1,5 @@
 import { Joi, Collection, Model } from 'elzeard'
-import {  IKindLinkUnRaw, IRewardCollectionPut } from 'community-coin-types'
+import {  IHeaderSignature, IKindLinkUnRaw, IThreadReward } from 'community-coin-types'
 import { BuildThreadPreviewString, IPreview, IProposalPreview, IThreadPreview } from 'involvera-content-embedding'
 import { AliasModel } from './alias'
 import { ScriptEngine } from 'wallet-script'
@@ -14,16 +14,16 @@ import { thread, embed, proposal } from '.'
 
 export class ThreadModel extends Model {
 
-    static FetchRewards = async (pubkhs: string, society: SocietyModel) => {
+    static FetchRewards = async (pubkhs: string, society: SocietyModel, headerSig: IHeaderSignature | void) => {
         try {
             const res = await axios.get(society.get().currencyRouteAPI() + '/threads/rewards',{
-                headers: { list: pubkhs },
+                headers: Object.assign({ list: pubkhs }, headerSig || {}),
                 validateStatus: function (status) {
                     return status >= 200 && status <= 500
                 }
             })
             if (res.status == 200)
-                return res.data as IRewardCollectionPut[]
+                return res.data as IThreadReward[]
         } catch(e){
             throw new Error(e)
         }
@@ -60,7 +60,7 @@ export class ThreadModel extends Model {
         }
     }
 
-    getRewards = async (society: SocietyModel) => ThreadModel.FetchRewards(this.get().pubKH(), society)
+    getRewards = async (society: SocietyModel, headerSig: IHeaderSignature | void) => ThreadModel.FetchRewards(this.get().pubKH(), society, headerSig)
 
     get = () => {
 
@@ -132,11 +132,11 @@ export class ThreadModel extends Model {
 
     prepareJSONRendering = () => this.setState({ content_link: this.get().contentLink() }, true)
 
-    renderView = async (society: SocietyModel)  => {
+    renderView = async (society: SocietyModel, headerSig: IHeaderSignature | void)  => {
         const embeds = await this.get().contentEmbeds()
         this.prepareJSONRendering()
         const json = this.to().filterGroup('view').plain()
-        json.rewards = (await this.getRewards(society))[0].reaction_count
+        json.reaction = (await this.getRewards(society, headerSig))[0]
         json.embeds = embeds
         return json
     }
@@ -147,19 +147,19 @@ export class ThreadCollection extends Collection {
         super(initialState, [ThreadModel, ThreadCollection], options)
     }
 
-    fetchRewards = async (society: SocietyModel) => ThreadModel.FetchRewards(this.local().map((t: ThreadModel) => t.get().pubKH()).join(','), society)
+    fetchRewards = async (society: SocietyModel, headerSig: IHeaderSignature | void) => ThreadModel.FetchRewards(this.local().map((t: ThreadModel) => t.get().pubKH()).join(','), society, headerSig)
 
     fetchByPubKH = async (sid: number, public_key_hashed: string) => await this.quick().find({ sid, public_key_hashed }) as ThreadModel
  
     pullBySID = async (sid: number, page: number) => await this.ctx().sql().pull().where({sid}).orderBy('created_at', 'desc').offset(page * 10).limit((page+1) * 10).run() as ThreadCollection    
     
-    renderPreviewList = async (society: SocietyModel) => {
-        const listRewards = await this.fetchRewards(society)
+    renderPreviewList = async (society: SocietyModel, headerSig: IHeaderSignature | void) => {
+        const listRewards = await this.fetchRewards(society, headerSig)
         const listEmbeds = await embed.pullBySidsAndPKHs(this.local().map((t: ThreadModel) => t.get().sid()), this.local().map((t: ThreadModel) => t.get().pubKH()))
         listEmbeds.local().removeBy({type: 'PROPOSAL'})
         const ret: IPreviewThread[] = []
         for (let i = 0; i < listRewards.length; i++){
-            ret.push({reaction: listRewards[i].reaction_count, preview_code: ''})
+            ret.push({reaction: listRewards[i], preview_code: ''})
             const e = listEmbeds.local().find({ public_key_hashed: (this.local().nodeAt(i) as ThreadModel).get().pubKH() }) as EmbedModel
             if (e)
                 ret[i].preview_code = e.get().content()

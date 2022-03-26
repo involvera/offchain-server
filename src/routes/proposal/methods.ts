@@ -1,6 +1,6 @@
 import express from 'express'
 import { proposal, ProposalCollection, ProposalModel, SocietyModel } from '../../models'
-import { getHeaderSignature } from './lib'
+import { getHeaderSignature } from '../../utils'
 
 export const GetProposalList = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const { offset } = req.headers

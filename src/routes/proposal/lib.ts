@@ -22,12 +22,3 @@ export const fetchAndPickRightProposalContext = async (society: SocietyModel, pu
     }
     return '_'
 }
-
-export const getHeaderSignature = (req: express.Request): IHeaderSignature | void => {
-    const { signature, pubkey } = req.headers
-    let headerSig: IHeaderSignature = undefined
-    if (signature && pubkey){
-        headerSig = {signature: signature as string, pubkey: pubkey as string}
-    }
-    return headerSig
-}
