@@ -37,25 +37,23 @@ export default (server: express.Express) => {
                         !!recipient && recipient != userPKH && recipient != Constant.PUBKEY_H_BURNER && addressToFetch.push(GetAddressFromPubKeyHash(Buffer.from(recipient, 'hex')))
                     }
                 }
-                
                 const aliases = await alias.pullByAddresses(addressToFetch)
-
                 for (let i = 0; i < list.length; i++){
                     const { sender, recipient } = list[i].pubkh
                     if (list[i].kind == 0){
-                        const senderAddr = sender ? GetAddressFromPubKeyHash(Buffer.from(sender, 'hex')) : ''
-                        const recipientAddr = recipient ? GetAddressFromPubKeyHash(Buffer.from(recipient, 'hex')) : ''
-
-                        const a = aliases.local().find((a: AliasModel) => {
-                            return a.get().address() == senderAddr || a.get().address() == recipientAddr
-                        })
-                        if (a)
-                            list[i].alias = a.to().filterGroup('author').plain()
-                        else 
-                            list[i].alias = null
-                    } else {
-                        list[i].alias = null
+                        const pkhToFind = sender === userPKH ? recipient : sender
+                        if (pkhToFind){
+                            const addrToFind = GetAddressFromPubKeyHash(Buffer.from(pkhToFind, 'hex'))
+                            const a = aliases.local().find((a: AliasModel) => {
+                                return a.get().address() == addrToFind
+                            })
+                            if (a){
+                                list[i].alias = a.to().filterGroup('author').plain()
+                                continue
+                            }
+                        }
                     }
+                    list[i].alias = null
                 }
                 res.status(200).json(list)
 
