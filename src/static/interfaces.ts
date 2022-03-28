@@ -19,7 +19,7 @@ export interface IPreviewProposal {
 
 export interface IPreviewThread{
     preview_code: string
-    reaction: IThreadReward
+    reward: IThreadReward
 }
 
 export interface IPostEmbed {

@@ -136,7 +136,7 @@ export class ThreadModel extends Model {
         const embeds = await this.get().contentEmbeds()
         this.prepareJSONRendering()
         const json = this.to().filterGroup('view').plain()
-        json.reaction = (await this.getRewards(society, headerSig))[0]
+        json.reward = (await this.getRewards(society, headerSig))[0]
         json.embeds = embeds
         return json
     }
@@ -159,7 +159,7 @@ export class ThreadCollection extends Collection {
         listEmbeds.local().removeBy({type: 'PROPOSAL'})
         const ret: IPreviewThread[] = []
         for (let i = 0; i < listRewards.length; i++){
-            ret.push({reaction: listRewards[i], preview_code: ''})
+            ret.push({reward: listRewards[i], preview_code: ''})
             const e = listEmbeds.local().find({ public_key_hashed: (this.local().nodeAt(i) as ThreadModel).get().pubKH() }) as EmbedModel
             if (e)
                 ret[i].preview_code = e.get().content()
