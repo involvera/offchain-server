@@ -1,7 +1,7 @@
 import { 
     IVoteSummary, IUserVote, IConstitutionRule, 
     ISocietyStats, ICostProposal, ICostHistory,
-    IThreadReward
+    IThreadReward, IKindLinkUnRaw
 } from 'community-coin-types'
 import { TPubKHContent } from 'wallet-script'
 import { ProposalModel } from '../models'
@@ -19,6 +19,7 @@ export interface IPreviewProposal {
 
 export interface IPreviewThread{
     preview_code: string
+    content_link: IKindLinkUnRaw
     reward: IThreadReward
 }
 

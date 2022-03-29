@@ -159,8 +159,9 @@ export class ThreadCollection extends Collection {
         listEmbeds.local().removeBy({type: 'PROPOSAL'})
         const ret: IPreviewThread[] = []
         for (let i = 0; i < listRewards.length; i++){
-            ret.push({reward: listRewards[i], preview_code: ''})
-            const e = listEmbeds.local().find({ public_key_hashed: (this.local().nodeAt(i) as ThreadModel).get().pubKH() }) as EmbedModel
+            const thread = this.local().nodeAt(i) as ThreadModel
+            ret.push({reward: listRewards[i], preview_code: '', content_link: thread.get().contentLink() })
+            const e = listEmbeds.local().find({ public_key_hashed: thread.get().pubKH() }) as EmbedModel
             if (e)
                 ret[i].preview_code = e.get().content()
         }
