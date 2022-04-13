@@ -10,7 +10,7 @@ import axios from 'axios'
 
 import { SocietyModel } from './society'
 import { ProposalModel } from './proposal'
-import { thread, embed, proposal } from '.'
+import { thread, embed, proposal, cachedSocieties } from '.'
 
 export class ThreadModel extends Model {
 
@@ -41,7 +41,6 @@ export class ThreadModel extends Model {
 
         title: Joi.string().min(0).max(100).default('').group(['view', 'full']),
         content: Joi.string().min(0).max(5000).default('').group(['view', 'full']),
-
         content_link: Joi.string().required().group(['view', 'full']),
         created_at: Joi.date().default('now').group(['view', 'full']),
     })
@@ -69,7 +68,7 @@ export class ThreadModel extends Model {
             const unzipped = (): IThreadPreview => {
                 let t: IThreadPreview | IProposalPreview | null = null
                 if (target instanceof ProposalModel){
-                    t = null
+                    t = target.get().preview().unzipped()
                 } else if (target instanceof ThreadModel){
                     t = target.get().preview(null).unzipped()
                 }
@@ -119,8 +118,10 @@ export class ThreadModel extends Model {
                 if (script.is().rethreadScript()){
                     const contentPKH = script.parse().targetPKHFromContentScript().toString('hex')
                     const p = await proposal.fetchByPubKH(this.get().sid(), contentPKH)
-                    if (p)
+                    if (p){
+                        await p.pullOnChainData(cachedSocieties.local().find({ id: this.get().sid() }) as SocietyModel)
                         return p
+                    }
                     const t = await thread.fetchByPubKH(this.get().sid(), contentPKH)
                     if (t)
                         return t
@@ -138,6 +139,18 @@ export class ThreadModel extends Model {
         const json = this.to().filterGroup('view').plain()
         json.reward = (await this.getRewards(society, headerSig))[0]
         json.embeds = embeds
+        const target = await this.get().target()
+        if (target){
+            target instanceof ThreadModel && target.prepareJSONRendering()
+            json.target = target instanceof ThreadModel ? target.to().filterGroup('view').plain() : target.get().preview().unzipped()
+            if (target instanceof ThreadModel){
+                const target2 = await target.get().target()
+                if (target2) {
+                    target2 instanceof ThreadModel && target2.prepareJSONRendering()
+                    json.target.target = target2 instanceof ThreadModel ? target2.to().filterGroup('view').plain() : target2.get().preview().unzipped()
+                }
+            }
+        }
         return json
     }
 }
@@ -151,19 +164,21 @@ export class ThreadCollection extends Collection {
 
     fetchByPubKH = async (sid: number, public_key_hashed: string) => await this.quick().find({ sid, public_key_hashed }) as ThreadModel
  
-    pullBySID = async (sid: number, page: number) => await this.ctx().sql().pull().where({sid}).orderBy('created_at', 'desc').offset(page * 10).limit((page+1) * 10).run() as ThreadCollection    
+    pullBySID = async (sid: number, page: number) => await this.ctx().sql().pull().where({sid}).orderBy('id', 'desc').offset(page * 10).limit((page+1) * 10).run() as ThreadCollection    
     
     renderPreviewList = async (society: SocietyModel, headerSig: IHeaderSignature | void) => {
         const listRewards = await this.fetchRewards(society, headerSig)
         const listEmbeds = await embed.pullBySidsAndPKHs(this.local().map((t: ThreadModel) => t.get().sid()), this.local().map((t: ThreadModel) => t.get().pubKH()))
         listEmbeds.local().removeBy({type: 'PROPOSAL'})
+
         const ret: IPreviewThread[] = []
         for (let i = 0; i < listRewards.length; i++){
             const thread = this.local().nodeAt(i) as ThreadModel
-            ret.push({reward: listRewards[i], preview_code: '', content_link: thread.get().contentLink() })
+            const r = {reward: listRewards[i], preview_code: '', content_link: thread.get().contentLink() }
             const e = listEmbeds.local().find({ public_key_hashed: thread.get().pubKH() }) as EmbedModel
             if (e)
-                ret[i].preview_code = e.get().content()
+                r.preview_code = e.get().content()
+            ret.push(r)
         }
         return ret
     }

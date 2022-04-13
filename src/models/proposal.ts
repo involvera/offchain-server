@@ -74,7 +74,7 @@ export class ProposalModel extends Model {
 
     toEmbedData = (): IPostEmbed => {
         return {
-            public_key_hashed: null as string,
+            public_key_hashed: this.get().pubKH(),
             index: this.get().index(),
             type: 'PROPOSAL',
             content: this.get().preview().zipped().embed_code,
@@ -101,7 +101,7 @@ export class ProposalModel extends Model {
                 const link = this.get().contentLink()
                 return {
                     index: this.get().index(),
-                    author: this.get().author().to().plain(),
+                    author: this.get().author().to().filterGroup('author').plain(),
                     layer: new ScriptEngine(ToArrayBufferFromB64(link.output.script)).proposalContentTypeString(),
                     created_at: this.get().createdAt(),
                     vote: this.get().vote(),
@@ -187,7 +187,7 @@ export class ProposalCollection extends Collection {
     fetchByIndex = async (sid: number, index: number) => await this.quick().find({sid, index}) as ProposalModel
     fetchByPubKH = async (sid: number, public_key_hashed: string) => await this.quick().find({public_key_hashed, sid}) as ProposalModel
 
-    pullLastsBySID = async (sid: number, offset: number) => await this.copy().sql().pull().where({sid}).orderBy('created_at', 'desc').offset(offset).limit(5).run() as ProposalCollection
+    pullLastsBySID = async (sid: number, offset: number) => await this.copy().sql().pull().where({sid}).orderBy('index', 'desc').offset(offset).limit(5).run() as ProposalCollection
 
     renderPreview = async (society: SocietyModel, headerSig: IHeaderSignature | void) => {
         society && await this.pullOnChainData(society, headerSig)

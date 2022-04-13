@@ -126,7 +126,7 @@ export class EmbedCollection extends Collection {
         if (sids.length != pkhs.length)
             throw new Error("sid and pkhs arrays don't have the same length")
         const arr = MixArraysToArrayObj(SET_SID_PKH, sids, pkhs)
-        return  await this.copy().sql().pull().whereIn(SET_SID_PKH, ArrayObjToDoubleArray(arr, SET_SID_PKH)).run() as EmbedCollection        
+        return await this.copy().sql().pull().whereIn(SET_SID_PKH, ArrayObjToDoubleArray(arr, SET_SID_PKH)).run() as EmbedCollection        
     }
 
     // pullByIDs = async (ids: number[]) => await this.copy().quick().pull('id', ids).run() as EmbedCollection
