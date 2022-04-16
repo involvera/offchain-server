@@ -143,12 +143,15 @@ export class ProposalModel extends Model {
     }
 
     renderView = async (society: SocietyModel | null, headerSig: IHeaderSignature | void) => {
-        const embeds = await this.get().embeds()
-        if (society)
-            await this.pullOnChainData(society, headerSig)
+        const p = await Promise.all([
+            this.get().embeds(),
+            society ? this.pullOnChainData(society, headerSig) : null
+        ])
+
         this.prepareJSONRendering()
         const json = this.to().filterGroup('view').plain()
-        json.embeds = embeds
+        json.embeds = p[0]
+
         return Object.assign(json, {
             content_link: this.state.content_link,
             vote: this.get().vote(),

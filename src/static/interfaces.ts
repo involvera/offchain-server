@@ -21,6 +21,7 @@ export interface IPreviewThread{
     preview_code: string
     content_link: IKindLinkUnRaw
     reward: IThreadReward
+    reply_count: number
 }
 
 export interface IPostEmbed {
@@ -49,4 +50,9 @@ export interface ILocalSocietyStats {
     constitution: IConstitutionData
     last_thread_cost_change_proposal: ICostHistory
     last_proposal_cost_change_proposal: ICostHistory
+}
+
+export interface ICountReply {
+    target_pkh: string
+    count: number
 }

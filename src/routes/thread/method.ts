@@ -1,3 +1,4 @@
+import { IKindLinkUnRaw } from 'community-coin-types'
 import express from 'express'
 import { SocietyModel, thread, ThreadModel } from '../../models'
 import { getHeaderSignature } from '../../utils'
@@ -30,7 +31,7 @@ export const PostThread = async  (req: express.Request, res: express.Response, n
 
     const { foreignConstraint } = thread.expressTools().checks()
     const data: any = {}
-    const keys = ['content', 'title', 'public_key', 'signature', 'content_link', 'author', 'public_key_hashed', 'sid', 'lugh_height']
+    const keys = ['content', 'title', 'public_key', 'signature', 'content_link', 'author', 'public_key_hashed', 'sid', 'lugh_height', 'target_pkh']
 
     keys.map((v: string) => {
         const val = req.body[v]
@@ -49,9 +50,11 @@ export const PostThread = async  (req: express.Request, res: express.Response, n
 
     try {
         const s = res.locals.society as SocietyModel
+        data.target_pkh = (JSON.parse(data.content_link) as IKindLinkUnRaw).target_content || null
         const m = await thread.quick().create(data) as ThreadModel
         res.status(201).json(await m.renderView(s))
     } catch (e){
+        console.log(e)
         res.status(500)
         res.json(e.toString())
     }

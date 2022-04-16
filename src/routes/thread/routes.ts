@@ -13,7 +13,7 @@ export default (server: express.Express) => {
     const { postHandler } = thread.expressTools().request()
 
     server.post('/thread', 
-        bodyAssignator(() => { return { content_link: '_', author: '1111111111111111111111111111111111', public_key_hashed: "0000000000000000000000000000000000000000", lugh_height: 1 } }),
+        bodyAssignator(() => { return { content_link: '_', author: '1111111111111111111111111111111111', public_key_hashed: "0000000000000000000000000000000000000000", lugh_height: 1, target_pkh: null } }),
         schemaValidator,
         CheckContentOrTitlePresence,
         CheckSignatureContent,
