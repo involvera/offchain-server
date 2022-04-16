@@ -1,14 +1,20 @@
 import { IKindLinkUnRaw } from 'community-coin-types'
 import express from 'express'
-import { SocietyModel, thread, ThreadModel } from '../../models'
+import { SocietyModel, thread, ThreadCollection, ThreadModel } from '../../models'
 import { getHeaderSignature } from '../../utils'
 
 export const GetThreadList = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    const { page } = req.headers
+    const { page, target_pkh } = req.headers
+
+    const isTargeting = typeof target_pkh == 'string' && target_pkh.length
 
     try {
         const s = res.locals.society as SocietyModel
-        const list = await thread.pullBySID(s.get().ID(), !page ? 0 : parseInt(page as string))
+        let list: ThreadCollection;
+        if (isTargeting)
+            list = await thread.pullBySIDAndTargetPKH(s.get().ID(), target_pkh as string, !page ? 0 : parseInt(page as string))
+        else
+            list = await thread.pullBySID(s.get().ID(), !page ? 0 : parseInt(page as string))
         res.status(200).json(await list.renderPreviewList(s, getHeaderSignature(req)))
     } catch (e){
         res.status(500).json(e.toString())

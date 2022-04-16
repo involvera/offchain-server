@@ -193,9 +193,11 @@ export class ProposalCollection extends Collection {
     pullLastsBySID = async (sid: number, offset: number) => await this.copy().sql().pull().where({sid}).orderBy('index', 'desc').offset(offset).limit(5).run() as ProposalCollection
 
     renderPreview = async (society: SocietyModel, headerSig: IHeaderSignature | void) => {
-        society && await this.pullOnChainData(society, headerSig)
-        const listEmbeds = await embed.pullBySidsAndIndexes(this.local().map((p: ProposalModel) => p.get().sid()), this.local().map((p: ProposalModel) => p.get().index()))
-
+        const p = await Promise.all([
+            embed.pullBySidsAndIndexes(this.local().map((p: ProposalModel) => p.get().sid()), this.local().map((p: ProposalModel) => p.get().index())),
+            society ? await this.pullOnChainData(society, headerSig) : null
+        ])
+        const listEmbeds = p[0]
         const ret: IPreviewProposal[] = []
         for (let i = 0; i < this.local().count(); i++){
             const p = this.local().nodeAt(i) as ProposalModel

@@ -180,11 +180,11 @@ export class ThreadCollection extends Collection {
             ret.push({target_pkh: o.target_pkh, count: o.count})
         return ret
     }
-
-    fetchByPubKH = async (sid: number, public_key_hashed: string) => await this.quick().find({ sid, public_key_hashed }) as ThreadModel
- 
-    pullBySID = async (sid: number, page: number) => await this.ctx().sql().pull().where({sid}).orderBy('id', 'desc').offset(page * 10).limit((page+1) * 10).run() as ThreadCollection    
     
+    fetchByPubKH = async (sid: number, public_key_hashed: string) => await this.quick().find({ sid, public_key_hashed }) as ThreadModel
+    pullBySID = async (sid: number, page: number) => await this.ctx().sql().pull().where({sid}).orderBy('id', 'desc').offset(page * 10).limit((page+1) * 10).run() as ThreadCollection    
+    pullBySIDAndTargetPKH = async (sid: number, target_pkh: string, page: number) => await this.ctx().sql().pull().where({sid, target_pkh}).orderBy('id', 'desc').offset(page * 10).limit((page+1) * 10).run() as ThreadCollection    
+
     renderPreviewList = async (society: SocietyModel, headerSig: IHeaderSignature | void) => {
         const p = await Promise.all([
             this.fetchRewards(society, headerSig),
