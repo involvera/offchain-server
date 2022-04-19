@@ -142,22 +142,21 @@ export class ProposalModel extends Model {
         }, true)
     }
 
-    renderView = async (society: SocietyModel | null, headerSig: IHeaderSignature | void) => {
+    renderViewJSON = async (society: SocietyModel | null, headerSig: IHeaderSignature | void) => {
         const p = await Promise.all([
             this.get().embeds(),
             society ? this.pullOnChainData(society, headerSig) : null
         ])
 
         this.prepareJSONRendering()
-        const json = this.to().filterGroup('view').plain()
-        json.embeds = p[0]
-
-        return Object.assign(json, {
+        return {
+            ...this.to().filterGroup('view').plain(), 
+            embeds: p[0],
             content_link: this.state.content_link,
             vote: this.get().vote(),
             pubkh_origin: this.getOnChainData().pubkh_origin,
             user_vote: this.getOnChainData().user_vote
-        })
+        }
     }
 
     constructor(initialState: any, options: any){
@@ -192,38 +191,35 @@ export class ProposalCollection extends Collection {
 
     pullLastsBySID = async (sid: number, offset: number) => await this.copy().sql().pull().where({sid}).orderBy('index', 'desc').offset(offset).limit(5).run() as ProposalCollection
 
-    renderPreview = async (society: SocietyModel, headerSig: IHeaderSignature | void) => {
+    renderPreviewJSON = async (society: SocietyModel, headerSig: IHeaderSignature | void) => {
         const p = await Promise.all([
             embed.pullBySidsAndIndexes(this.local().map((p: ProposalModel) => p.get().sid()), this.local().map((p: ProposalModel) => p.get().index())),
             society ? await this.pullOnChainData(society, headerSig) : null
         ])
         const listEmbeds = p[0]
-        const ret: IPreviewProposal[] = []
-        for (let i = 0; i < this.local().count(); i++){
-            const p = this.local().nodeAt(i) as ProposalModel
-            const { user_vote, vote } = p.getOnChainData()
-            ret.push({user_vote, vote, preview_code: ''})
-            const e = listEmbeds.local().find({ index: (this.local().nodeAt(i) as ProposalModel).get().index() }) as EmbedModel
-            if (e){
-                ret[i].preview_code = e.get().content()
-            }
-        }
 
-        return ret
+        return this.local().map((p: ProposalModel) => {
+            const { user_vote, vote } = p.getOnChainData()
+            const embed = listEmbeds.local().find({ index: p.get().index() }) as EmbedModel
+            if (!embed)
+                throw new Error("Unable to fetch thread's embed")
+            return {
+                preview_code: embed.get().content(),
+                user_vote, 
+                vote,
+            } as IPreviewProposal
+        })
     }
 
     pullOnChainData = async (society: SocietyModel, headerSig: IHeaderSignature | void) => {
         try {
             const list = this.local().map((p: ProposalModel) => p.get().pubKH()).join(',')
-            const l = await ProposalCollection.fetchOnChainData(society, list, headerSig)
-            if (typeof l == 'string'){
-                throw new Error(l)
-            }
-            let i = 0;
-            for (const e of l){
-                (this.local().nodeAt(i) as ProposalModel).setOnChainData(e)
-                i++
-            }
+            const res = await ProposalCollection.fetchOnChainData(society, list, headerSig)
+            if (typeof res == 'string')
+                throw new Error(res)
+            res.forEach((link: IContentLink, index: number) => {
+                (this.local().nodeAt(index) as ProposalModel).setOnChainData(link)
+            })
         } catch (e){
             throw new Error(e)
         }

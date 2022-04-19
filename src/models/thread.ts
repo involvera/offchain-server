@@ -1,6 +1,6 @@
 import { Joi, Collection, Model } from 'elzeard'
 import {  IHeaderSignature, IKindLinkUnRaw, IThreadReward } from 'community-coin-types'
-import { BuildThreadPreviewString, IPreview, IProposalPreview, IThreadPreview } from 'involvera-content-embedding'
+import { BuildThreadPreviewString, IEmbedTag, IPreview, IProposalPreview, IThreadPreview, ParseEmbedInText } from 'involvera-content-embedding'
 import { AliasModel } from './alias'
 import _ from 'lodash'
 import { ScriptEngine } from 'wallet-script'
@@ -28,6 +28,22 @@ export class ThreadModel extends Model {
         } catch(e){
             throw new Error(e)
         }
+    }
+
+    static RenderTargetAndSubTarget = async (target: ThreadModel | ProposalModel | null) => {
+        let json: any = {}
+        if (target){
+            target instanceof ThreadModel && target.prepareJSONRendering()
+            json.target = target instanceof ThreadModel ? target.to().filterGroup('view').plain() : target.get().preview().unzipped()
+            if (target instanceof ThreadModel){
+                const target2 = await target.get().target()
+                if (target2) {
+                    target2 instanceof ThreadModel && target2.prepareJSONRendering()
+                    json.target.target = target2 instanceof ThreadModel ? target2.to().filterGroup('view').plain() : target2.get().preview().unzipped()
+                }
+            }
+        }
+        return json
     }
 
     static schema = Joi.object({
@@ -98,9 +114,7 @@ export class ThreadModel extends Model {
             },
             embedString: async () => {
                 const e = await embed.fetchByPKH(this.get().id(), this.get().pubKH(), 'THREAD')
-                if (e)
-                    return e.get().content()
-                return null
+                return !!e ? e.get().content() : null
             },      
             title: (): string => this.state.title,
             content: (): string => this.state.content,
@@ -129,40 +143,29 @@ export class ThreadModel extends Model {
                         return t
                 }
                 return null
-            }
+            },
+            countReply: async () => this.sql().count().where({sid: this.get().sid(), target_pkh: this.get().pubKH()})
         }
     }
 
-    fetchCountReply = async () => this.sql().count().where({sid: this.get().sid(), target_pkh: this.get().pubKH()})
-
     prepareJSONRendering = () => this.setState({ content_link: this.get().contentLink() }, true)
 
-    renderView = async (society: SocietyModel, headerSig: IHeaderSignature | void)  => {
+    renderViewJSON = async (society: SocietyModel, headerSig: IHeaderSignature | void)  => {
         const p = await Promise.all([
             this.get().contentEmbeds(),
             this.getRewards(society, headerSig),
-            this.fetchCountReply(),
+            this.get().countReply(),
             this.get().target()
         ])
-        const embeds = p[0]
+        const targetJSON = await ThreadModel.RenderTargetAndSubTarget(p[3])
         this.prepareJSONRendering()
-        const json = this.to().filterGroup('view').plain()
-        json.reward = p[1][0]
-        json.embeds = embeds
-        json.reply_count = p[2]
-        const target = p[3]
-        if (target){
-            target instanceof ThreadModel && target.prepareJSONRendering()
-            json.target = target instanceof ThreadModel ? target.to().filterGroup('view').plain() : target.get().preview().unzipped()
-            if (target instanceof ThreadModel){
-                const target2 = await target.get().target()
-                if (target2) {
-                    target2 instanceof ThreadModel && target2.prepareJSONRendering()
-                    json.target.target = target2 instanceof ThreadModel ? target2.to().filterGroup('view').plain() : target2.get().preview().unzipped()
-                }
-            }
+        return {
+            ...this.to().filterGroup('view').plain(),
+            ...targetJSON,
+            embeds: p[0],
+            reward: p[1][0],
+            reply_count: p[2],
         }
-        return json
     }
 }
 
@@ -172,24 +175,84 @@ export class ThreadCollection extends Collection {
         super(initialState, [ThreadModel, ThreadCollection], options)
     }
 
-    fetchRewards = async (society: SocietyModel, headerSig: IHeaderSignature | void) => ThreadModel.FetchRewards(this.local().map((t: ThreadModel) => t.get().pubKH()).join(','), society, headerSig)
-    fetchCountReply = async (society: SocietyModel) => {
-        const res = await this.sql().knex().select('target_pkh').table(this.sql().table().name()).where({sid: society.get().ID()}).whereIn('target_pkh', this.local().map((t: ThreadModel) => t.get().pubKH())).groupBy('target_pkh').count('* as count')
-        const ret: ICountReply[] = []
-        for (let o of res)
-            ret.push({target_pkh: o.target_pkh, count: o.count})
-        return ret
+    get = () => {
+
+        const rewardList = (society: SocietyModel, headerSig: IHeaderSignature | void) => {
+            const listPKHStr = this.local().map((t: ThreadModel) => t.get().pubKH()).join(',')
+            return ThreadModel.FetchRewards(listPKHStr, society, headerSig)
+        }
+
+        const countReplyList = async (society: SocietyModel) => {
+            const res = await this.sql().knex().select('target_pkh').table(this.sql().table().name()).where({sid: society.get().ID()}).whereIn('target_pkh', this.local().map((t: ThreadModel) => t.get().pubKH())).groupBy('target_pkh').count('* as count')
+            const ret: ICountReply[] = []
+            for (let o of res)
+                ret.push({target_pkh: o.target_pkh, count: o.count})
+            return ret
+        }
+
+        const embedList = (society: SocietyModel) => {
+            const content = this.local().map((t: ThreadModel) => t.get().content()).join(' ')
+            return EmbedCollection.FetchEmbeds(content, society.get().ID())
+        }
+
+        return {
+            rewardList, countReplyList, embedList
+        }
+
     }
     
     fetchByPubKH = async (sid: number, public_key_hashed: string) => await this.quick().find({ sid, public_key_hashed }) as ThreadModel
-    pullBySID = async (sid: number, page: number) => await this.ctx().sql().pull().where({sid}).orderBy('id', 'desc').offset(page * 10).limit((page+1) * 10).run() as ThreadCollection    
-    pullBySIDAndTargetPKH = async (sid: number, target_pkh: string, page: number) => await this.ctx().sql().pull().where({sid, target_pkh}).orderBy('id', 'desc').offset(page * 10).limit((page+1) * 10).run() as ThreadCollection    
+    pullBySID = async (sid: number, page: number, nPerPage: number) => await this.ctx().sql().pull().where({sid}).orderBy('id', 'desc').offset(page * nPerPage).limit((page+1) * nPerPage).run() as ThreadCollection    
+    pullBySIDAndTargetPKH = async (sid: number, target_pkh: string, page: number, nPerPage: number) => await this.ctx().sql().pull().where({sid, target_pkh}).orderBy('id', 'desc').offset(page * nPerPage).limit((page+1) * nPerPage).run() as ThreadCollection
+    pullBySIDAndTargetPKHSortedAsc = async (sid: number, target_pkh: string, page: number, nPerPage: number) => await this.ctx().sql().pull().where({sid, target_pkh}).orderBy('id', 'asc').offset(page * nPerPage).limit((page+1) * nPerPage).run() as ThreadCollection    
+
+    //thread full format without targets.
+    renderThreadRepliesJSON = async (society: SocietyModel, headerSig: IHeaderSignature | void) => {
+        const p = await Promise.all([
+            this.get().embedList(society),
+            this.get().rewardList(society, headerSig),
+            this.get().countReplyList(society),
+        ])
+
+        const listEmbeds = p[0]
+        return this.local().map((t: ThreadModel, index: number) => {
+            const es = ParseEmbedInText(t.get().content())
+            const embeds = this.copy().local().set(es.map((e: IEmbedTag) => {
+                if (!e.society)
+                    e.society = society.get().pathName()
+                const sid = (cachedSocieties.local().find({path_name: e.society}) as SocietyModel).get().ID()
+                if (e.type == 'PROPOSAL'){
+                    return listEmbeds.local().find((emb: EmbedModel) => {
+                        return e.index == emb.get().index() && emb.get().sid() === sid
+                    }).to().plain()
+                }
+                if (e.type == 'THREAD'){
+                    return listEmbeds.local().find((emb: EmbedModel) => {
+                        return e.pkh == emb.get().pubKH() && emb.get().sid() === sid
+                    }).to().plain()
+                }
+            })).to().filterGroup('preview').plain().map((c: any) => c.content) as string[]
+
+            t.prepareJSONRendering()
+            const json = t.to().filterGroup('view').plain()
+            const reward = _.find(p[1], {thread_pkh: t.get().pubKH()})
+            if (!reward)
+                throw new Error("Unable to fetch thread's rewards")
+            const replyCount = _.find(p[2], {target_pkh: t.get().pubKH()})            
+            return {
+                ...json, 
+                embeds,
+                reward,
+                reply_count: replyCount ? replyCount.count : 0
+            }
+        }) 
+    }
 
     renderPreviewList = async (society: SocietyModel, headerSig: IHeaderSignature | void) => {
         const p = await Promise.all([
-            this.fetchRewards(society, headerSig),
+            this.get().rewardList(society, headerSig),
             embed.pullBySidsAndPKHs(this.local().map((t: ThreadModel) => t.get().sid()), this.local().map((t: ThreadModel) => t.get().pubKH())),
-            this.fetchCountReply(society)
+            this.get().countReplyList(society)
         ])
         
         const listRewards = p[0]
@@ -197,19 +260,24 @@ export class ThreadCollection extends Collection {
         const listCountReplies = p[2]
         listEmbeds.local().removeBy({type: 'PROPOSAL'})
 
-        const ret: IPreviewThread[] = []
-        for (let i = 0; i < listRewards.length; i++){
-            const thread = this.local().nodeAt(i) as ThreadModel
-            const r = {reward: listRewards[i], preview_code: '', content_link: thread.get().contentLink(), reply_count: 0 } as IPreviewThread
-            const e = listEmbeds.local().find({ public_key_hashed: thread.get().pubKH() }) as EmbedModel
-            if (e)
-                r.preview_code = e.get().content()
-            const count = _.find(listCountReplies, { target_pkh: thread.get().pubKH() })
-            if (count)
-                r.reply_count = count.count
-            ret.push(r)
-        }
-        return ret
+        return this.local().map((t: ThreadModel) => {
+            const reward = _.find(listRewards, {thread_pkh: t.get().pubKH()})
+            if (!reward)
+                throw new Error("Unable to fetch thread's rewards")
+
+            const embed = listEmbeds.local().find({ public_key_hashed: t.get().pubKH() }) as EmbedModel
+            if (!embed)
+                throw new Error("Unable to fetch thread's embed")
+
+            const replyCount = _.find(listCountReplies, { target_pkh: t.get().pubKH() })
+
+            return {
+                reward, 
+                preview_code: embed.get().content(), 
+                content_link: t.get().contentLink(), 
+                reply_count: replyCount ? replyCount.count : 0
+            }
+        })
     }
 }
 

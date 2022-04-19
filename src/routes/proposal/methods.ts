@@ -8,7 +8,7 @@ export const GetProposalList = async (req: express.Request, res: express.Respons
     try {
         const s = res.locals.society as SocietyModel
         const list = await proposal.pullLastsBySID(parseInt(req.params.sid), parseInt(offset as string))
-        res.status(200).json(await list.sortByIndexDesc().renderPreview(s, getHeaderSignature(req)))
+        res.status(200).json(await list.sortByIndexDesc().renderPreviewJSON(s, getHeaderSignature(req)))
     } catch (e){
         res.status(500).json(e.toString())
     }
@@ -20,7 +20,7 @@ export const GetProposal = async (req: express.Request, res: express.Response, n
     try {
         const p = await proposal.fetchByIndex(parseInt(sid), parseInt(index))
         const s = res.locals.society as SocietyModel
-        p ? res.status(200).json(await p.renderView(s, getHeaderSignature(req))) : res.sendStatus(404)
+        p ? res.status(200).json(await p.renderViewJSON(s, getHeaderSignature(req))) : res.sendStatus(404)
     } catch (e){
         res.status(500).json(e.toString())
     }
@@ -57,7 +57,7 @@ export const PostProposal = async  (req: express.Request, res: express.Response,
             rewards: null,
             user_vote: req.body.user_vote
         })
-        const j = await m.renderView(null)
+        const j = await m.renderViewJSON(null)
         res.status(201).json(j)
     } catch (e){
         res.status(500)

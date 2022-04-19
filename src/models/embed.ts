@@ -31,6 +31,7 @@ export class EmbedModel extends Model {
             id: (): number => this.state.id,
             content: (): string => this.state.content,
             type: (): TPubKHContent => this.state.type,
+            sid: (): number => this.state.sid,
             index: (): number | -1 => this.state.index,
             pubKH: (): string | null => this.state.public_key_hashed,
             createdAt: (): Date => this.state.created_at

@@ -7,18 +7,31 @@ export const GetThreadList = async (req: express.Request, res: express.Response,
     const { page, target_pkh } = req.headers
 
     const isTargeting = typeof target_pkh == 'string' && target_pkh.length
-
     try {
         const s = res.locals.society as SocietyModel
         let list: ThreadCollection;
         if (isTargeting)
-            list = await thread.pullBySIDAndTargetPKH(s.get().ID(), target_pkh as string, !page ? 0 : parseInt(page as string))
+            list = await thread.pullBySIDAndTargetPKH(s.get().ID(), target_pkh as string, !page ? 0 : parseInt(page as string), 10)
         else
-            list = await thread.pullBySID(s.get().ID(), !page ? 0 : parseInt(page as string))
+            list = await thread.pullBySID(s.get().ID(), !page ? 0 : parseInt(page as string), 10)
         res.status(200).json(await list.renderPreviewList(s, getHeaderSignature(req)))
     } catch (e){
         res.status(500).json(e.toString())
     }
+}
+
+export const GetThreadRepliesList = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const { pubkh, page } = req.params
+
+    try {
+        const s = res.locals.society as SocietyModel
+        const list = await thread.pullBySIDAndTargetPKHSortedAsc(s.get().ID(), pubkh, !page ? 0 : parseInt(page as string), 5)
+        const json = await list.renderThreadRepliesJSON(s, getHeaderSignature(req))
+        res.status(200).json(json)
+    } catch (e){
+        res.status(500).json(e.toString())
+    }
+
 }
 
 export const GetThread = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -27,7 +40,7 @@ export const GetThread = async (req: express.Request, res: express.Response, nex
     try {
         const s = res.locals.society as SocietyModel
         const t = await thread.fetchByPubKH(s.get().ID(), pubkh)
-        t ? res.status(200).json(await t.renderView(s, getHeaderSignature(req))) : res.sendStatus(404)
+        t ? res.status(200).json(await t.renderViewJSON(s, getHeaderSignature(req))) : res.sendStatus(404)
     } catch (e){
         res.status(500).json(e.toString())
     }
@@ -58,7 +71,7 @@ export const PostThread = async  (req: express.Request, res: express.Response, n
         const s = res.locals.society as SocietyModel
         data.target_pkh = (JSON.parse(data.content_link) as IKindLinkUnRaw).target_content || null
         const m = await thread.quick().create(data) as ThreadModel
-        res.status(201).json(await m.renderView(s))
+        res.status(201).json(await m.renderViewJSON(s))
     } catch (e){
         console.log(e)
         res.status(500)

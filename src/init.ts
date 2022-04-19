@@ -16,7 +16,7 @@ export const initServer = async () => {
     server.use(morgan('tiny') as any)
 
     server.use(function(req, res, next) {
-      res.header("Access-Control-Allow-Headers", "Access-Control-Max-Age, Access-Control-Allow-Origin, Origin, X-Requested-With, Content-Type,Accept, signature, public_key, admin_key, page, filter, sid, target_pkh");
+      res.header("Access-Control-Allow-Headers", "Access-Control-Max-Age, Access-Control-Allow-Origin, Origin, X-Requested-With, Content-Type,Accept, signature, public_key, admin_key, page, filter, sid, target_pkh, group");
       res.header("Access-Control-Allow-Origin", "*"); 
       res.header("Access-Control-Max-Age", "7200")
       res.header("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS")
