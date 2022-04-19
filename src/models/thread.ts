@@ -2,6 +2,7 @@ import { Joi, Collection, Model } from 'elzeard'
 import {  IHeaderSignature, IKindLinkUnRaw, IThreadReward } from 'community-coin-types'
 import { BuildThreadPreviewString, IEmbedTag, IPreview, IProposalPreview, IThreadPreview, ParseEmbedInText } from 'involvera-content-embedding'
 import { AliasModel } from './alias'
+import Knex from 'knex'
 import _ from 'lodash'
 import { ScriptEngine } from 'wallet-script'
 import { ToArrayBufferFromB64 } from 'wallet-util'
@@ -128,6 +129,7 @@ export class ThreadModel extends Model {
                     return JSON.parse(this.state.content_link)
                 return this.state.content_link
             },
+            targetPKH: (): string => this.state.target_pkh,
             target: async (): Promise<ThreadModel | ProposalModel | null> => {
                 const link = this.get().contentLink()
                 const script = new ScriptEngine(ToArrayBufferFromB64(link.output.script))
@@ -150,18 +152,26 @@ export class ThreadModel extends Model {
 
     prepareJSONRendering = () => this.setState({ content_link: this.get().contentLink() }, true)
 
-    renderViewJSON = async (society: SocietyModel, headerSig: IHeaderSignature | void)  => {
+    renderReplyJSON = async (society: SocietyModel, headerSig: IHeaderSignature | void)  => {
+        return this.renderViewJSON(society, headerSig, true)
+    }
+
+    renderViewJSON = async (society: SocietyModel, headerSig: IHeaderSignature | void, isReply: boolean | void)  => {
         const p = await Promise.all([
             this.get().contentEmbeds(),
             this.getRewards(society, headerSig),
             this.get().countReply(),
-            this.get().target()
+            !isReply ? this.get().target() : null
         ])
-        const targetJSON = await ThreadModel.RenderTargetAndSubTarget(p[3])
         this.prepareJSONRendering()
+        
+        let target: any ={}
+        if (!isReply)
+            target = await ThreadModel.RenderTargetAndSubTarget(p[3])
+
         return {
             ...this.to().filterGroup('view').plain(),
-            ...targetJSON,
+            ...target,
             embeds: p[0],
             reward: p[1][0],
             reply_count: p[2],
@@ -202,6 +212,7 @@ export class ThreadCollection extends Collection {
     }
     
     fetchByPubKH = async (sid: number, public_key_hashed: string) => await this.quick().find({ sid, public_key_hashed }) as ThreadModel
+    
     pullBySID = async (sid: number, page: number, nPerPage: number) => await this.ctx().sql().pull().where({sid}).orderBy('id', 'desc').offset(page * nPerPage).limit((page+1) * nPerPage).run() as ThreadCollection    
     pullBySIDAndTargetPKH = async (sid: number, target_pkh: string, page: number, nPerPage: number) => await this.ctx().sql().pull().where({sid, target_pkh}).orderBy('id', 'desc').offset(page * nPerPage).limit((page+1) * nPerPage).run() as ThreadCollection
     pullBySIDAndTargetPKHSortedAsc = async (sid: number, target_pkh: string, page: number, nPerPage: number) => await this.ctx().sql().pull().where({sid, target_pkh}).orderBy('id', 'asc').offset(page * nPerPage).limit((page+1) * nPerPage).run() as ThreadCollection    
