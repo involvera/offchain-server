@@ -3,7 +3,7 @@ import { thread } from '../../models'
 import { bodyAssignator } from '../../utils'
 import { CheckSignatureContent } from '../proposal/middleware'
 import { GetAndAssignLinkToThread, CheckIfThreadAlreadyRecorded, BuildEmbed, CheckContentOrTitlePresence } from './middleware'
-import { GetThread, GetThreadList, PostThread, GetThreadRepliesList} from './method'
+import { GetThreadList, PostThread, GetThreadRepliesList, GetFullThread} from './method'
 import { CheckIfSocietyExistsByBodyParam, CheckIfSocietyExistsByRouteParam } from '../society'
 import { CheckIfAliasExist } from '../alias'
 
@@ -26,6 +26,7 @@ export default (server: express.Express) => {
 
     server.get('/thread/replies/:sid/:pubkh', CheckIfSocietyExistsByRouteParam, GetThreadRepliesList)
     server.get('/thread/:sid', CheckIfSocietyExistsByRouteParam, GetThreadList)
-    server.get('/thread/:sid/:pubkh', CheckIfSocietyExistsByRouteParam, GetThread)
+    
+    server.get('/thread/:sid/:pubkh', CheckIfSocietyExistsByRouteParam, GetFullThread)
 
 }

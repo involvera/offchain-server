@@ -31,40 +31,30 @@ export const GetThreadRepliesList = async (req: express.Request, res: express.Re
     } catch (e){
         res.status(500).json(e.toString())
     }
-
 }
 
-export const GetThread = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+export const GetFullThread = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const { pubkh } = req.params
-    const { target_pkh } = req.headers
 
     try {
         const s = res.locals.society as SocietyModel
-        if (!target_pkh){
-            const t = await thread.fetchByPubKH(s.get().ID(), pubkh)
-            t ? res.status(200).json(await t.renderViewJSON(s, getHeaderSignature(req))) : res.sendStatus(404)
-        } else {
-            const ret = await Promise.all([
-                thread.fetchByPubKH(s.get().ID(), pubkh),
-                thread.fetchByPubKH(s.get().ID(), target_pkh as string)
-            ])
-            const td = ret[0]
-            const tgt = ret[1]
-            if (!td || !tgt){
-                res.sendStatus(404)
+        const th = await thread.fetchByPubKH(s.get().ID(), pubkh)
+        if (th && th.get().targetPKH()){
+            const tgt = await thread.fetchByPubKH(s.get().ID(), th.get().targetPKH())
+            if (tgt){
+                res.status(200).json(await Promise.all([
+                    th.renderReplyJSON(s, getHeaderSignature(req)),
+                    tgt.renderViewJSON(s, getHeaderSignature(req))
+                ]))
                 return
             }
-
-            if (td.get().targetPKH() != tgt.get().pubKH()){
-                res.status(400).json("pkh and target_pkh not correlated")
-                return
-            }
-
-            res.status(200).json(await Promise.all([
-                await td.renderReplyJSON(s, getHeaderSignature(req)),
-                await tgt.renderViewJSON(s, getHeaderSignature(req))
-            ]))
         }
+        if (th){
+            res.status(200).json([await th.renderViewJSON(s, getHeaderSignature(req))])
+            return
+        }
+        res.sendStatus(404)
+        return
     } catch (e){
         res.status(500).json(e.toString())
     }
