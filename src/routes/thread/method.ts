@@ -61,8 +61,8 @@ export const GetThread = async (req: express.Request, res: express.Response, nex
             }
 
             res.status(200).json(await Promise.all([
-                await tgt.renderViewJSON(s, getHeaderSignature(req)),
-                await td.renderReplyJSON(s, getHeaderSignature(req))
+                await td.renderReplyJSON(s, getHeaderSignature(req)),
+                await tgt.renderViewJSON(s, getHeaderSignature(req))
             ]))
         }
     } catch (e){
