@@ -30,6 +30,7 @@ export interface IPostEmbed {
     type: TPubKHContent,
     content: string
     sid: number
+    spname: string
 }
 
 export interface IConstitutionData {

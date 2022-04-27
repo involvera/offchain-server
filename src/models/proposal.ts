@@ -5,11 +5,11 @@ import { BuildProposalPreviewString, IPreview, IProposalPreview} from 'involvera
 import { AliasModel } from './alias'
 import { ScriptEngine } from 'wallet-script'
 import { ToArrayBufferFromB64 } from 'wallet-util'
-import { EmbedCollection, EmbedModel } from './embed'
+import { EmbedModel } from './embed'
 import { SocietyModel } from './society'
 import axios from 'axios'
 import { IHeaderSignature, IPreviewProposal, IPostEmbed } from '../static/interfaces'
-import { embed } from '.'
+import { cachedSocieties, embed } from '.'
 
 export class ProposalModel extends Model {
 
@@ -73,12 +73,14 @@ export class ProposalModel extends Model {
     getOnChainData = (): IContentLink | null => this._onChainData
 
     toEmbedData = (): IPostEmbed => {
+        const s = cachedSocieties.findByID(this.get().sid())
         return {
             public_key_hashed: this.get().pubKH(),
             index: this.get().index(),
             type: 'PROPOSAL',
             content: this.get().preview().zipped().embed_code,
-            sid: this.get().sid()
+            sid: this.get().sid(),
+            spname: s.get().pathName()
         }
     }
     
@@ -99,6 +101,7 @@ export class ProposalModel extends Model {
 
             const unzipped = (): IProposalPreview => {
                 const link = this.get().contentLink()
+                const s = cachedSocieties.findByID(this.get().sid())
                 return {
                     index: this.get().index(),
                     author: this.get().author().to().filterGroup('author').plain(),
@@ -106,7 +109,8 @@ export class ProposalModel extends Model {
                     created_at: this.get().createdAt(),
                     vote: this.get().vote(),
                     title: this.get().title(),
-                    sid: this.get().sid()
+                    sid: this.get().sid(),
+                    spname: s.get().pathName()
                 }
             }
 
@@ -117,10 +121,6 @@ export class ProposalModel extends Model {
 
         return {
             preview,
-            embeds: async () => {
-                const list = await EmbedCollection.FetchEmbeds(this.get().content(), this.get().sid())
-                return list.local().to().filterGroup('preview').plain().map((c: any) => c.content) as string[]
-            },
             id: (): number => this.state.id, 
             sid: (): number => this.state.sid,
             title: (): string => this.state.title,
@@ -143,15 +143,10 @@ export class ProposalModel extends Model {
     }
 
     renderViewJSON = async (society: SocietyModel | null, headerSig: IHeaderSignature | void) => {
-        const p = await Promise.all([
-            this.get().embeds(),
-            society ? this.pullOnChainData(society, headerSig) : null
-        ])
-
+        society && await this.pullOnChainData(society, headerSig)
         this.prepareJSONRendering()
         return {
             ...this.to().filterGroup('view').plain(), 
-            embeds: p[0],
             content_link: this.state.content_link,
             vote: this.get().vote(),
             pubkh_origin: this.getOnChainData().pubkh_origin,
@@ -163,6 +158,7 @@ export class ProposalModel extends Model {
         super(initialState, ProposalModel, options)
     }
 }
+
 
 export class ProposalCollection extends Collection {
 
@@ -205,7 +201,7 @@ export class ProposalCollection extends Collection {
                 throw new Error("Unable to fetch thread's embed")
             return {
                 preview_code: embed.get().content(),
-                user_vote, 
+                user_vote,
                 vote,
             } as IPreviewProposal
         })

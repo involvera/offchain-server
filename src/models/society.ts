@@ -103,6 +103,9 @@ export class SocietyCollection extends Collection {
           const res = await this.quick().pull().run()
           this.local().set(res.local().to().plain())
     }
+
+    findByID = (id: number) => this.local().find({id}) as SocietyModel
+    findByPathName = (name: string) => this.local().find({path_name: name}) as SocietyModel
 }
 
 export default new SocietyCollection([], {table: 'societies'})

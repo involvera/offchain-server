@@ -1,5 +1,5 @@
 import express from 'express'
-import {proposal, SocietyModel, embed, ProposalModel, AliasModel } from '../../models'
+import {proposal, SocietyModel, embed, ProposalModel } from '../../models'
 import { ToPubKeyHash, GetAddressFromPubKeyHash, VerifySignatureHex, ToArrayBufferFromB64 } from 'wallet-util'
 import { ScriptEngine } from 'wallet-script'
 import { fetchAndPickRightProposalContext } from './lib'

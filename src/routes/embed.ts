@@ -1,85 +1,55 @@
 import express from 'express'
-import { embed, EmbedCollection, proposal, thread } from '../models' 
+import _ from 'lodash'
+import { IsPubKHRightFormat } from 'wallet-util'
+
+import { cachedSocieties, embed, EmbedModel } from '../models' 
 
 export default (server: express.Express) => {
 
-    server.get('/embed/:sid/thread/:pkh', 
-        async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-            const { pkh, sid } = req.params
-            try {
-                const e = await embed.fetchByPKH(parseInt(sid), pkh, 'THREAD')
-                if (e){
-                    res.status(200)
-                    res.json(e.to().plain())
-                } else {
-                    const t = await thread.fetchByPubKH(parseInt(sid), pkh)
-                    if (t){
-                        const e = await embed.create().thread(t)
-                        if (e){
-                            res.status(200)
-                            res.json(e.to().plain())
-                            return
-                        }
+    server.get('/embed/list', async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+        const { filter } = req.headers
+
+        interface IProposal {
+            sid: number
+            index: number
+        }
+        interface IThread {
+            sid: number
+            pkh: string
+        }
+
+        let ps: IProposal[] = []
+        let ts: IThread[] = []
+        for (const e of (filter as string).split(';')){
+            const splited = e.split(',')
+            if (splited.length == 2){
+                const s = cachedSocieties.findByPathName(splited[1])
+                if (s){
+                    if (IsPubKHRightFormat(Buffer.from(splited[0], 'hex')))
+                        ts.push({pkh: splited[0], sid: s.get().ID()})
+                    else {
+                        const index = parseInt(splited[0])
+                        index != NaN && ps.push({index, sid: s.get().ID()})
                     }
-                    res.sendStatus(404)
                 }
-            } catch (e){
-                res.status(500)
-                res.json(e.toString())
             }
         }
-    )
+        ps = _.uniq(ps)
+        ts = _.uniq(ts)
 
-    server.put('/embed/:sid/text', async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-        const { sid } = req.params
-        const { content } = req.body
 
-        try {
-            const embeds = await EmbedCollection.FetchEmbeds(content, parseInt(sid))
-            res.status(200)
-            res.json(embeds.local().to().filterGroup('preview').plain().map((c: any) => c.content))
-        } catch (e){
-            res.status(500)
-            res.json(e.toString())
-        }
+        const ret = await Promise.all([
+            ps.length > 0 ? embed.pullBySidsAndIndexes(ps.map((v) => v.sid), ps.map((v) => v.index)) : null,
+            ts.length > 0 ? embed.pullBySidsAndPKHs(ts.map((v) => v.sid), ts.map((v) => v.pkh)) : null
+        ])
+
+        const proposals = ps.length > 0 ? ret[0].local().map((e: EmbedModel) => e.get().content()) : []
+        const threads = ts.length > 0 ? ret[1].local().map((e: EmbedModel) => e.get().content()) : []
+ 
+        res.status(200)
+        res.json({
+            proposals,
+            threads
+        })
     })
-
-    server.get('/embed/:sid/proposal/:index', 
-        async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-            const { index, sid } = req.params
-            try {
-                const e = await embed.fetchByIndex(parseInt(sid), parseInt(index))
-                if (e){
-                    res.status(200)
-                    res.json(e.to().plain())
-                } else {
-                    const p = await proposal.fetchByIndex(parseInt(sid), parseInt(index))
-                    if (p){
-                        const e = await embed.create().proposal(p)
-                        if (e){
-                            res.status(200)
-                            res.json(e.to().plain())
-                            return
-                        }
-                    }
-                    res.sendStatus(404)
-                }
-            } catch (e){
-                res.status(500)
-                res.json(e.toString())
-            }
-        }
-    )
-
-    // server.get('/embed/list/:ids', async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    //     const ids = JSON.parse(req.params.ids)
-    //     try {
-    //         const list = await embed.pullByIDs(ids)
-    //         res.status(200)
-    //         res.json(list.local().to().plain())
-    //     } catch (e){
-    //         res.status(500)
-    //         res.json(e.toString())  
-    //     }
-    // })
 }
