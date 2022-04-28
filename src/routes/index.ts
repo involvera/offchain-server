@@ -6,6 +6,7 @@ import initThread from './thread/routes'
 import initAdmin from './admin'
 import initEmbeds from './embed'
 import initPuts from './puts'
+import initUsers from './user'
 
 export const initRoutes = (server: express.Express) => {
 
@@ -23,4 +24,5 @@ export const initRoutes = (server: express.Express) => {
     initAdmin(server)
     initEmbeds(server)
     initPuts(server)
+    initUsers(server)
 }

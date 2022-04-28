@@ -3,13 +3,25 @@ import { ToPubKeyHash, GetAddressFromPubKeyHash, VerifySignatureHex } from 'wall
 import { alias } from '../models' 
 import { bodyAssignator} from '../utils'
 
-export const CheckIfAliasExist = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+export const CheckIfAliasExistByBody = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const { author } = req.body
 
     const a = await alias.findByAddress(author)
     if (!a){
         res.status(404)
         res.json({error: "You need to create an alias on your address before adding content."})
+        return
+    }
+    res.locals.alias = a
+    next()
+}
+
+export const CheckIfAliasExistByURLParam = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const { address } = req.params
+
+    const a = await alias.findByAddress(address)
+    if (!a){
+        res.sendStatus(404)
         return
     }
     res.locals.alias = a
@@ -66,19 +78,6 @@ export default (server: express.Express) => {
             } else {
                 res.sendStatus(200)
             }
-        } catch (e){
-            res.status(500)
-            res.json(e.toString())
-        }
-    })
-
-    server.get('/alias/addresses/:addresses', async (req: express.Request, res: express.Response) => {
-        const addresses = JSON.parse(req.params.addresses)
-
-        try {
-            const a = await alias.pullByAddresses(addresses.slice(0, 100))
-            res.status(200)
-            res.json(a.local().to().filterGroup('author').plain())
         } catch (e){
             res.status(500)
             res.json(e.toString())

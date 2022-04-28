@@ -45,6 +45,7 @@ export const CheckIfThreadAlreadyRecorded = async (req: express.Request, res: ex
         next()
         return
     }
+    console.log(p.to().plain())
     res.status(401)
     res.json({error: `Thread is already recorded.`})
     return

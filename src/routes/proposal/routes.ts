@@ -4,7 +4,7 @@ import { bodyAssignator } from '../../utils'
 import { CheckIfProposalAlreadyRecorded, GetAndAssignLinkToProposal, CheckSignatureContent, CheckContent, BuildEmbed } from './middleware'
 import { GetProposalList, GetProposal, PostProposal } from './methods'
 import { CheckIfSocietyExistsByBodyParam, CheckIfSocietyExistsByRouteParam } from '../society'
-import { CheckIfAliasExist } from '../alias'
+import { CheckIfAliasExistByBody } from '../alias'
 
 export default (server: express.Express) => { 
 
@@ -20,7 +20,7 @@ export default (server: express.Express) => {
         GetAndAssignLinkToProposal,
         CheckContent,
         schemaValidator,
-        CheckIfAliasExist,
+        CheckIfAliasExistByBody,
         BuildEmbed,
         PostProposal
     )

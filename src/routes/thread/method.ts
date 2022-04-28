@@ -1,6 +1,6 @@
 import { IKindLinkUnRaw } from 'community-coin-types'
 import express from 'express'
-import { SocietyModel, thread, ThreadCollection, ThreadModel } from '../../models'
+import { AliasModel, SocietyModel, thread, ThreadCollection, ThreadModel } from '../../models'
 import { getHeaderSignature } from '../../utils'
 
 export const GetThreadList = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -14,6 +14,19 @@ export const GetThreadList = async (req: express.Request, res: express.Response,
             list = await thread.pullBySIDAndTargetPKH(s.get().ID(), target_pkh as string, !page ? 0 : parseInt(page as string), 10)
         else
             list = await thread.pullBySID(s.get().ID(), !page ? 0 : parseInt(page as string), 10)
+        res.status(200).json(await list.renderPreviewList(s, getHeaderSignature(req)))
+    } catch (e){
+        res.status(500).json(e.toString())
+    }
+}
+
+export const GetUserThreadList = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const { page } = req.headers
+    const a = res.locals.alias as AliasModel
+    const s = res.locals.society as SocietyModel
+
+    try {
+        const list = await thread.pullByAuthorAddress(a.get().address(), s.get().ID(), !page ? 0 : parseInt(page as string), 10)
         res.status(200).json(await list.renderPreviewList(s, getHeaderSignature(req)))
     } catch (e){
         res.status(500).json(e.toString())

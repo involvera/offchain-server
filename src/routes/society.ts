@@ -42,8 +42,8 @@ export default (server: express.Express) => {
             res.status(200)
             res.json(s.to().plain())
         } catch (e){
-            res.json(e.toString())
             res.status(500)
+            res.json(e.toString())
         }
     })
 

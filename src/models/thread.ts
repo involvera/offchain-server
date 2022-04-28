@@ -202,6 +202,8 @@ export class ThreadCollection extends Collection {
     
     fetchByPubKH = async (sid: number, public_key_hashed: string) => await this.quick().find({ sid, public_key_hashed }) as ThreadModel
     
+    pullByAuthorAddress = async (authorAddress: string, sid: number, page: number, nPerPage: number) => await this.ctx().sql().pull().where({sid, author: authorAddress}).orderBy('id', 'desc').offset(page * nPerPage).limit((page+1) * nPerPage).run() as ThreadCollection    
+
     pullBySID = async (sid: number, page: number, nPerPage: number) => await this.ctx().sql().pull().where({sid}).orderBy('id', 'desc').offset(page * nPerPage).limit((page+1) * nPerPage).run() as ThreadCollection    
     pullBySIDAndTargetPKH = async (sid: number, target_pkh: string, page: number, nPerPage: number) => await this.ctx().sql().pull().where({sid, target_pkh}).orderBy('id', 'desc').offset(page * nPerPage).limit((page+1) * nPerPage).run() as ThreadCollection
     pullBySIDAndTargetPKHSortedAsc = async (sid: number, target_pkh: string, page: number, nPerPage: number) => await this.ctx().sql().pull().where({sid, target_pkh}).orderBy('id', 'asc').offset(page * nPerPage).limit((page+1) * nPerPage).run() as ThreadCollection    
