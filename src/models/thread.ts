@@ -202,11 +202,21 @@ export class ThreadCollection extends Collection {
     
     fetchByPubKH = async (sid: number, public_key_hashed: string) => await this.quick().find({ sid, public_key_hashed }) as ThreadModel
     
-    pullByAuthorAddress = async (authorAddress: string, sid: number, page: number, nPerPage: number) => await this.ctx().sql().pull().where({sid, author: authorAddress}).orderBy('id', 'desc').offset(page * nPerPage).limit((page+1) * nPerPage).run() as ThreadCollection    
+    pullLastsByAuthorAddress = async (authorAddress: string, sid: number, offset: number, nPerPage: number) => {
+        return await this.ctx().sql().pull().where({sid, author: authorAddress}).orderBy('id', 'desc').offset(offset).limit(nPerPage).run() as ThreadCollection
+    }
 
-    pullBySID = async (sid: number, page: number, nPerPage: number) => await this.ctx().sql().pull().where({sid}).orderBy('id', 'desc').offset(page * nPerPage).limit((page+1) * nPerPage).run() as ThreadCollection    
-    pullBySIDAndTargetPKH = async (sid: number, target_pkh: string, page: number, nPerPage: number) => await this.ctx().sql().pull().where({sid, target_pkh}).orderBy('id', 'desc').offset(page * nPerPage).limit((page+1) * nPerPage).run() as ThreadCollection
-    pullBySIDAndTargetPKHSortedAsc = async (sid: number, target_pkh: string, page: number, nPerPage: number) => await this.ctx().sql().pull().where({sid, target_pkh}).orderBy('id', 'asc').offset(page * nPerPage).limit((page+1) * nPerPage).run() as ThreadCollection    
+    pullLastsBySID = async (sid: number, offset: number, nPerPage: number) => {
+        return await this.ctx().sql().pull().where({sid}).orderBy('id', 'desc').offset(offset).limit(nPerPage).run() as ThreadCollection    
+    }
+    
+    pullLastsBySIDAndTargetPKH = async (sid: number, target_pkh: string, offset: number, nPerPage: number) => {
+        return await this.ctx().sql().pull().where({sid, target_pkh}).orderBy('id', 'desc').offset(offset).limit(nPerPage).run() as ThreadCollection
+    }
+
+    pullBySIDAndTargetPKHSortedAsc = async (sid: number, target_pkh: string, offset: number, nPerPage: number) => {
+        return await this.ctx().sql().pull().where({sid, target_pkh}).orderBy('id', 'asc').offset(offset).limit(nPerPage).run() as ThreadCollection    
+    }
 
     //thread full format without targets.
     renderThreadRepliesJSON = async (society: SocietyModel, headerSig: IHeaderSignature | void) => {

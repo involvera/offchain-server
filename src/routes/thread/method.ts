@@ -4,16 +4,18 @@ import { AliasModel, SocietyModel, thread, ThreadCollection, ThreadModel } from 
 import { getHeaderSignature } from '../../utils'
 
 export const GetThreadList = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    const { page, target_pkh } = req.headers
+    const { offset, target_pkh } = req.headers
 
     const isTargeting = typeof target_pkh == 'string' && target_pkh.length
     try {
         const s = res.locals.society as SocietyModel
         let list: ThreadCollection;
         if (isTargeting)
-            list = await thread.pullBySIDAndTargetPKH(s.get().ID(), target_pkh as string, !page ? 0 : parseInt(page as string), 10)
-        else
-            list = await thread.pullBySID(s.get().ID(), !page ? 0 : parseInt(page as string), 10)
+            list = await thread.pullLastsBySIDAndTargetPKH(s.get().ID(), target_pkh as string, !offset ? 0 : parseInt(offset as string), 10)
+        else{
+            console.log(offset)
+            list = await thread.pullLastsBySID(s.get().ID(), !offset ? 0 : parseInt(offset as string), 10)
+        }
         res.status(200).json(await list.renderPreviewList(s, getHeaderSignature(req)))
     } catch (e){
         res.status(500).json(e.toString())
@@ -21,12 +23,12 @@ export const GetThreadList = async (req: express.Request, res: express.Response,
 }
 
 export const GetUserThreadList = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    const { page } = req.headers
+    const { offset } = req.headers
     const a = res.locals.alias as AliasModel
     const s = res.locals.society as SocietyModel
 
     try {
-        const list = await thread.pullByAuthorAddress(a.get().address(), s.get().ID(), !page ? 0 : parseInt(page as string), 10)
+        const list = await thread.pullLastsByAuthorAddress(a.get().address(), s.get().ID(), !offset ? 0 : parseInt(offset as string), 10)
         res.status(200).json(await list.renderPreviewList(s, getHeaderSignature(req)))
     } catch (e){
         res.status(500).json(e.toString())
@@ -34,11 +36,11 @@ export const GetUserThreadList = async (req: express.Request, res: express.Respo
 }
 
 export const GetThreadRepliesList = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    const { pubkh, page } = req.params
+    const { pubkh, offset } = req.params
 
     try {
         const s = res.locals.society as SocietyModel
-        const list = await thread.pullBySIDAndTargetPKHSortedAsc(s.get().ID(), pubkh, !page ? 0 : parseInt(page as string), 5)
+        const list = await thread.pullBySIDAndTargetPKHSortedAsc(s.get().ID(), pubkh, !offset ? 0 : parseInt(offset as string), 5)
         const json = await list.renderThreadRepliesJSON(s, getHeaderSignature(req))
         res.status(200).json(json)
     } catch (e){
