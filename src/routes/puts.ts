@@ -63,9 +63,6 @@ export default (server: express.Express) => {
         } catch(e){
             res.status(500).json(e.toString())
         }
-
-
-    
     })
 
 

@@ -8,6 +8,7 @@ export class AliasModel extends Model {
         created_at: Joi.date().default('now'),
         pp: Joi.string().max(255).group(['author']),
         username: Joi.string().max(16).lowercase().regex(/^[a-z0-9_]{3,16}$/).unique().group(['author']),
+        last_username_update: Joi.date().default(() => new Date(0))
     })
 
     constructor(initialState: any, options: any){
@@ -21,6 +22,7 @@ export class AliasModel extends Model {
             ppURI: (): string | null => this.state.pp,
             username: (): string => this.state.username,
             createdAt: (): Date => this.state.created_at,
+            lastUsernameUpdate: (): Date => this.state.last_username_update
         }
     }
 }
