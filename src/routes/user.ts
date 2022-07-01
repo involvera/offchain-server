@@ -4,6 +4,7 @@ import { alias, AliasModel, SocietyModel } from '../models'
 import { CheckIfSocietyExistsByRouteParam } from './society'
 import { PubKeyHashFromAddress } from 'wallet-util'
 import { CheckIfAliasExistByURLParam } from './alias'
+import { GenerateRandomUsername } from 'username-creator'
 
 
 const fetchUserWalletInfo = async (society: SocietyModel, address: string) => {
@@ -22,6 +23,7 @@ const fetchUserWalletInfo = async (society: SocietyModel, address: string) => {
 }
 
 export default (server: express.Express) => {
+
     server.get('/user/:sid/:address', 
     CheckIfSocietyExistsByRouteParam,
     CheckIfAliasExistByURLParam,
@@ -46,4 +48,32 @@ export default (server: express.Express) => {
             res.json(e.toString())
         }
     })
+
+    server.get('/user/name', async (req: express.Request, res: express.Response) => {
+        console.log('yes?')
+        let username = GenerateRandomUsername()
+        let suffix = ''
+        let nAttempt = 0
+        const MAX_ATTEMPT = 10
+        const MAX_USERNAME_LENGTH = 16
+        while (true){
+            const a = await alias.findByUsername(username+suffix)
+            if (!a)
+                break;
+            else {
+                if (/\d/.test(username) || username.length === MAX_USERNAME_LENGTH || nAttempt === MAX_ATTEMPT){
+                    username = GenerateRandomUsername();
+                    suffix = '';
+                    nAttempt = 0
+                } else {
+                    suffix = Math.pow(10, Math.min(3, MAX_USERNAME_LENGTH - username.length)).toString()
+                    nAttempt++
+                } 
+            }
+        }
+
+        res.status(200)
+        res.json(username + suffix)
+    })
+
 }
