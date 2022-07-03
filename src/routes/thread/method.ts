@@ -12,8 +12,7 @@ export const GetThreadList = async (req: express.Request, res: express.Response,
         let list: ThreadCollection;
         if (isTargeting)
             list = await thread.pullLastsBySIDAndTargetPKH(s.get().ID(), target_pkh as string, !offset ? 0 : parseInt(offset as string), 10)
-        else{
-            console.log(offset)
+        else {
             list = await thread.pullLastsBySID(s.get().ID(), !offset ? 0 : parseInt(offset as string), 10)
         }
         res.status(200).json(await list.renderPreviewList(s, getHeaderSignature(req)))

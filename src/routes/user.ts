@@ -50,7 +50,6 @@ export default (server: express.Express) => {
     })
 
     server.get('/user/name', async (req: express.Request, res: express.Response) => {
-        console.log('yes?')
         let username = GenerateRandomUsername()
         let suffix = ''
         let nAttempt = 0

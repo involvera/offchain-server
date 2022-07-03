@@ -45,17 +45,16 @@ export default (server: express.Express) => {
     const { schemaValidator } = alias.expressTools().middleware()
 
     server.post('/alias', 
-        bodyAssignator((req: express.Request) => {
-            return { address: req.headers.public_key ? GetAddressFromPubKeyHash(ToPubKeyHash(Buffer.from(req.headers.public_key as string, 'hex'))) : '' }
-        }),
         schemaValidator,
         checkSignatureOnUsername,
         async (req: express.Request, res: express.Response) => {
-            const { address } = req.body
+            const { public_key } = req.headers
+            const pkh = ToPubKeyHash(Buffer.from(public_key as string, 'hex'))
+            const address = GetAddressFromPubKeyHash(pkh)
             try {
                 let a = await alias.quick().find({ address }) as AliasModel
                 if (!a){
-                    a = await alias.quick().create(Object.assign({}, req.body, req.body.username ? {last_username_update: new Date() } : {}  )) as AliasModel
+                    a = await alias.quick().create(Object.assign({}, req.body, req.body.username ? {last_username_update: new Date('1970/01/01') } : {}  )) as AliasModel
                     res.status(201)
                 } else {
                     const nDaysAgo = new Date(new Date().getTime() - (INTERVAL_DAY_CHANGE_ALIAS_USERNAME * 1000 * 3600 * 24))
@@ -96,7 +95,7 @@ export default (server: express.Express) => {
     server.get('/alias/address/:address', async (req: express.Request, res: express.Response) => {
         const { address } = req.params     
         try {
-            const a = await alias.quick().find({ address: address })
+            const a = await alias.quick().find({ address })
             if (!a)
                 res.sendStatus(404)
             else {
