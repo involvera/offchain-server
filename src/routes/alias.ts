@@ -51,23 +51,43 @@ export default (server: express.Express) => {
             const { public_key } = req.headers
             const pkh = ToPubKeyHash(Buffer.from(public_key as string, 'hex'))
             const address = GetAddressFromPubKeyHash(pkh)
+            
+            const isUpdatingUsername = (a: AliasModel) => req.body.username !== a.get().username()
+
+            const isAllowedToUpdateUsername = (a: AliasModel) => {
+                const nDaysAgo = new Date(new Date().getTime() - (INTERVAL_DAY_CHANGE_ALIAS_USERNAME * 1000 * 3600 * 24))
+                return !isUpdatingUsername(a) || a.get().lastUsernameUpdate() < nDaysAgo
+            }
+
+            const getRightState = (a: AliasModel | null) => {
+                const { username } = req.body
+                if (!a)
+                    return {
+                        address, username,
+                        last_username_update: new Date('1970/01/01')
+                    }
+
+                const ret: any = { address }
+                if (isUpdatingUsername(a)){
+                    ret.username = username
+                    ret.last_username_update = new Date()
+                }
+                return ret
+            }
+
             try {
                 let a = await alias.quick().find({ address }) as AliasModel
                 if (!a){
-                    a = await alias.quick().create(Object.assign({}, req.body, req.body.username ? {last_username_update: new Date('1970/01/01') } : {}  )) as AliasModel
+                    a = await alias.quick().create(getRightState(null)) as AliasModel
                     res.status(201)
                 } else {
-                    const nDaysAgo = new Date(new Date().getTime() - (INTERVAL_DAY_CHANGE_ALIAS_USERNAME * 1000 * 3600 * 24))
-                    if (
-                        (req.body.username === a.get().username()) || 
-                        (req.body.username !== a.get().username() && a.get().lastUsernameUpdate() < nDaysAgo)
-                    ){
-                        await a.setState(Object.assign({}, req.body, req.body.username !== a.get().username() ? {last_username_update: new Date() } : {})).saveToDB()
-                        res.status(200)
-                    } else {
+                    if (!isAllowedToUpdateUsername(a)){
                         res.json(`you already updated your username less than ${INTERVAL_DAY_CHANGE_ALIAS_USERNAME} days ago.`)
                         res.status(401)
+                        return
                     }
+                    await a.setState(getRightState(a)).saveToDB()
+                    res.status(200)
                 }
                 res.json(a.to().plain())
             } catch (err){
