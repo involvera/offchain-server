@@ -2,7 +2,6 @@ import express from 'express'
 import { ToPubKeyHash, GetAddressFromPubKeyHash, VerifySignatureHex } from 'wallet-util'
 import { alias, AliasModel } from '../models' 
 import { INTERVAL_DAY_CHANGE_ALIAS_USERNAME } from '../static'
-import { bodyAssignator} from '../utils'
 
 export const CheckIfAliasExistByBody = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const { author } = req.body
@@ -64,7 +63,7 @@ export default (server: express.Express) => {
                 if (!a)
                     return {
                         address, username,
-                        last_username_update: new Date('1970/01/01')
+                        last_username_update: new Date('2000/01/01')
                     }
 
                 const ret: any = { address }
