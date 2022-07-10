@@ -2,11 +2,11 @@ import express from 'express'
 import formData from 'express-form-data'
 import morgan from 'morgan'
 import { config } from 'elzeard'
-import { cachedSocieties, SocietyModel, thread, ThreadCollection } from './models'
+import { cachedSocieties } from './models'
 import cors from 'cors'
 
 export const initCachedData = async () => {
-  await cachedSocieties.pullAll();
+  await cachedSocieties.pullAll(); 
 }
 
 export const initServer = async () => {

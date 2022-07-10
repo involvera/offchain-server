@@ -1,6 +1,20 @@
 import { Joi, Collection, Model } from 'elzeard'
 
+interface IAuthor {
+    pp: string | null
+    username: string
+    address: string
+}
+
 export class AliasModel extends Model {
+
+    static defaultAliasWithAuthorGroup = (address: string): IAuthor => {
+        return {
+            pp: null,
+            username: '',
+            address
+        }
+    }
 
     static schema = Joi.object({
         id: Joi.number().autoIncrement().primaryKey(),

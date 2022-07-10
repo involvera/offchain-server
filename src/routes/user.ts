@@ -3,9 +3,7 @@ import express from 'express'
 import { alias, AliasModel, SocietyModel } from '../models'
 import { CheckIfSocietyExistsByRouteParam } from './society'
 import { PubKeyHashFromAddress } from 'wallet-util'
-import { CheckIfAliasExistByURLParam } from './alias'
 import { GenerateRandomUsername } from 'username-creator'
-
 
 const fetchUserWalletInfo = async (society: SocietyModel, address: string) => {
     const pkhHex = PubKeyHashFromAddress(address).toString('hex')
@@ -26,17 +24,17 @@ export default (server: express.Express) => {
 
     server.get('/user/:sid/:address', 
     CheckIfSocietyExistsByRouteParam,
-    CheckIfAliasExistByURLParam,
     async (req: express.Request, res: express.Response) => {
-        const a = res.locals.alias as AliasModel
+        const { address } = req.params
         const s = res.locals.society as SocietyModel
         
         try {
-            const response = await fetchUserWalletInfo(s, a.get().address())
+            const a = await alias.findByAddress(address)
+            const response = await fetchUserWalletInfo(s, address)
             if (response.status == 200){
                 res.status(200)
                 res.json({
-                    alias: a.to().filterGroup('author').plain(),
+                    alias: !!a ? a.to().filterGroup('author').plain() : AliasModel.defaultAliasWithAuthorGroup(address),
                     info: response.data
                 })
             } else {
