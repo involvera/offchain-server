@@ -81,8 +81,8 @@ export default (server: express.Express) => {
                     res.status(201)
                 } else {
                     if (!isAllowedToUpdateUsername(a)){
-                        res.json(`you already updated your username less than ${INTERVAL_DAY_CHANGE_ALIAS_USERNAME} days ago.`)
                         res.status(401)
+                        res.json(`you already updated your username less than ${INTERVAL_DAY_CHANGE_ALIAS_USERNAME} days ago.`)
                         return
                     }
                     await a.setState(getRightState(a)).saveToDB()
