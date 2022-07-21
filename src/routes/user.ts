@@ -1,7 +1,7 @@
 import axios from 'axios'
 import express from 'express'
 import { alias, AliasModel, SocietyModel } from '../models'
-import { CheckIfSocietyExistsByRouteParam } from './society'
+import { CheckIfSocietyIDExistsByRouteParam } from './society'
 import { PubKeyHashFromAddress } from 'wallet-util'
 import { GenerateRandomUsername } from 'username-creator'
 
@@ -23,7 +23,7 @@ const fetchUserWalletInfo = async (society: SocietyModel, address: string) => {
 export default (server: express.Express) => {
 
     server.get('/user/:sid/:address', 
-    CheckIfSocietyExistsByRouteParam,
+    CheckIfSocietyIDExistsByRouteParam,
     async (req: express.Request, res: express.Response) => {
         const { address } = req.params
         const s = res.locals.society as SocietyModel

@@ -2,7 +2,7 @@ import express from 'express'
 import { alias, cachedSocieties, society, SocietyModel } from '../models' 
 import { CheckAdminKey , CheckIsDevelopment } from './admin'
 
-const getSocietyIfExists = async (sid: number, req: express.Request, res: express.Response, next: express.NextFunction) => {
+const getSocietyIfExists = async (sid: number, res: express.Response, next: express.NextFunction) => {
     try {
         const s = await cachedSocieties.local().find({id: sid}) as SocietyModel
         if (!s){
@@ -17,8 +17,8 @@ const getSocietyIfExists = async (sid: number, req: express.Request, res: expres
     }
 }
 
-export const CheckIfSocietyExistsByBodyParam = async (req: express.Request, res: express.Response, next: express.NextFunction) => await getSocietyIfExists(req.body.sid, req, res, next)
-export const CheckIfSocietyExistsByRouteParam = async (req: express.Request, res: express.Response, next: express.NextFunction) => await getSocietyIfExists(parseInt(req.params.sid), req, res, next)
+export const CheckIfSocietyIDExistsByBodyParam = async (req: express.Request, res: express.Response, next: express.NextFunction) => await getSocietyIfExists(req.body.sid, res, next)
+export const CheckIfSocietyIDExistsByRouteParam = async (req: express.Request, res: express.Response, next: express.NextFunction) => await getSocietyIfExists(parseInt(req.params.sid), res, next)
 
 export default (server: express.Express) => {
     const { schemaValidator } = society.expressTools().middleware()
@@ -34,7 +34,7 @@ export default (server: express.Express) => {
     server.put('/society/:sid', 
     CheckAdminKey,
     schemaValidator,
-    CheckIfSocietyExistsByRouteParam,
+    CheckIfSocietyIDExistsByRouteParam,
     async (req: express.Request, res: express.Response) => {
         const s = res.locals.society as SocietyModel
         try {
@@ -48,7 +48,7 @@ export default (server: express.Express) => {
     })
 
     server.get('/society/:sid',
-    CheckIfSocietyExistsByRouteParam,
+    CheckIfSocietyIDExistsByRouteParam,
     async (req: express.Request, res: express.Response) => {
         const s = res.locals.society as SocietyModel
         try {

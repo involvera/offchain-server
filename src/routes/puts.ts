@@ -4,12 +4,12 @@ import { GetAddressFromPubKeyHash, ToPubKeyHash,  } from 'wallet-util'
 import { Constant } from 'wallet-script'
 
 import { SocietyModel, alias, AliasModel } from '../models'
-import { CheckIfSocietyExistsByRouteParam } from './society'
+import { CheckIfSocietyIDExistsByRouteParam } from './society'
 
 export default (server: express.Express) => {
 
 
-    server.get('/puts/list/:sid', CheckIfSocietyExistsByRouteParam, async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    server.get('/puts/list/:sid', CheckIfSocietyIDExistsByRouteParam, async (req: express.Request, res: express.Response, next: express.NextFunction) => {
         const { signature, pubkey, filter, offset } = req.headers
         const s = res.locals.society as SocietyModel
 

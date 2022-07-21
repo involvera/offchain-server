@@ -3,7 +3,7 @@ import { proposal }  from '../../models'
 import { bodyAssignator } from '../../utils'
 import { CheckIfProposalAlreadyRecorded, GetAndAssignLinkToProposal, CheckSignatureContent, CheckContent, BuildEmbed } from './middleware'
 import { GetProposalList, GetProposal, PostProposal } from './methods'
-import { CheckIfSocietyExistsByBodyParam, CheckIfSocietyExistsByRouteParam } from '../society'
+import { CheckIfSocietyIDExistsByBodyParam, CheckIfSocietyIDExistsByRouteParam } from '../society'
 import { CheckIfAliasExistByBody } from '../alias'
 
 export default (server: express.Express) => { 
@@ -15,7 +15,7 @@ export default (server: express.Express) => {
             return {  index: 0, author: '1111111111111111111111111111111111', public_key_hashed: '0000000000000000000000000000000000000000', context: '' }
         }),
         CheckSignatureContent,
-        CheckIfSocietyExistsByBodyParam,
+        CheckIfSocietyIDExistsByBodyParam,
         CheckIfProposalAlreadyRecorded,
         GetAndAssignLinkToProposal,
         CheckContent,
@@ -25,8 +25,8 @@ export default (server: express.Express) => {
         PostProposal
     )
 
-    server.get('/proposal/:sid/:index', CheckIfSocietyExistsByRouteParam, GetProposal)
+    server.get('/proposal/:sid/:index', CheckIfSocietyIDExistsByRouteParam, GetProposal)
 
-    server.get('/proposal/:sid', CheckIfSocietyExistsByRouteParam, GetProposalList)
+    server.get('/proposal/:sid', CheckIfSocietyIDExistsByRouteParam, GetProposalList)
 
 }

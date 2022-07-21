@@ -1,8 +1,8 @@
 import express from 'express'
-import { alias, proposal, society, SocietyModel, thread, embed, cachedSocieties } from '../models'
+import { alias, proposal, SocietyModel, thread, embed } from '../models'
 import { ADMIN_KEY, IS_PRODUCTION } from '../static'
 import { initCachedData } from '../init'
-import { CheckIfSocietyExistsByRouteParam } from './society'
+import { CheckIfSocietyIDExistsByRouteParam } from './society'
 
 export const CheckIsDevelopment = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (IS_PRODUCTION){
@@ -28,7 +28,7 @@ export default (server: express.Express) => {
     server.post('/admin/:sid/reset', 
     CheckAdminKey,
     CheckIsDevelopment,
-    CheckIfSocietyExistsByRouteParam,
+    CheckIfSocietyIDExistsByRouteParam,
     async (req: express.Request, res: express.Response) => {
         const s = res.locals.society as SocietyModel
         try {

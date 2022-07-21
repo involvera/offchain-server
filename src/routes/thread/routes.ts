@@ -4,7 +4,7 @@ import { bodyAssignator } from '../../utils'
 import { CheckSignatureContent } from '../proposal/middleware'
 import { GetAndAssignLinkToThread, CheckIfThreadAlreadyRecorded, BuildEmbed, CheckContentOrTitlePresence } from './middleware'
 import { GetThreadList, PostThread, GetThreadRepliesList, GetFullThread, GetUserThreadList} from './method'
-import { CheckIfSocietyExistsByBodyParam, CheckIfSocietyExistsByRouteParam } from '../society'
+import { CheckIfSocietyIDExistsByBodyParam, CheckIfSocietyIDExistsByRouteParam } from '../society'
 import { CheckIfAliasExistByBody, CheckIfAliasExistByURLParam } from '../alias'
 
 export default (server: express.Express) => { 
@@ -16,7 +16,7 @@ export default (server: express.Express) => {
         schemaValidator,
         CheckContentOrTitlePresence,
         CheckSignatureContent,
-        CheckIfSocietyExistsByBodyParam,
+        CheckIfSocietyIDExistsByBodyParam,
         CheckIfThreadAlreadyRecorded,
         GetAndAssignLinkToThread,
         CheckIfAliasExistByBody,
@@ -24,11 +24,11 @@ export default (server: express.Express) => {
         PostThread,
     )
 
-    server.get('/thread/:sid', CheckIfSocietyExistsByRouteParam, GetThreadList)
-    server.get('/thread/:sid/:pubkh', CheckIfSocietyExistsByRouteParam, GetFullThread)
+    server.get('/thread/:sid', CheckIfSocietyIDExistsByRouteParam, GetThreadList)
+    server.get('/thread/:sid/:pubkh', CheckIfSocietyIDExistsByRouteParam, GetFullThread)
 
-    server.get('/thread/replies/:sid/:pubkh', CheckIfSocietyExistsByRouteParam, GetThreadRepliesList)
-    server.get('/thread/:sid/user/:address', CheckIfSocietyExistsByRouteParam, CheckIfAliasExistByURLParam, GetUserThreadList)
+    server.get('/thread/replies/:sid/:pubkh', CheckIfSocietyIDExistsByRouteParam, GetThreadRepliesList)
+    server.get('/thread/:sid/user/:address', CheckIfSocietyIDExistsByRouteParam, CheckIfAliasExistByURLParam, GetUserThreadList)
     
 
 }
