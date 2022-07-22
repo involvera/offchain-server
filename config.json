@@ -1,0 +1,16 @@
+{
+    "production": false,
+    "port": 3020,
+    "history_dir_path": "./history",
+    "mysql": {
+        "host": "localhost",
+        "user": "fanta",
+        "password": "aqw12345",
+        "database": "involvera"
+    },
+    "ssl": {
+        "key": "",
+        "cert": ""
+    },
+    "admin_key": "2f72e55b962b6cd66ea70e8b6bd8657d1c87a23a65769213d76dcb5da6abf6b5"
+}
