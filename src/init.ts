@@ -4,12 +4,16 @@ import morgan from 'morgan'
 import { config } from 'elzeard'
 import { cachedSocieties } from './models'
 import cors from 'cors'
+import { loadServerConfiguration, ServerConfiguration} from './static/config'
+
 
 export const initCachedData = async () => {
   await cachedSocieties.pullAll(); 
 }
 
 export const initServer = async () => {
+    await loadServerConfiguration()
+
     const server = express()
     server.use(express.json() as any);
     server.use(formData.parse() as any)
@@ -25,14 +29,8 @@ export const initServer = async () => {
 
     server.use(cors())
 
-    config.setHistoryDirPath('./history')
-    config.setMySQLConfig({
-        host: 'localhost',
-        user: 'fanta',
-        password: 'aqw12345',
-        database: 'involvera',
-        timezone: 'utc'
-    })
+    config.setHistoryDirPath(ServerConfiguration.history_dir_path)
+    config.setMySQLConfig(Object.assign({timezone: 'utc'}, ServerConfiguration.mysql))
 
     await config.done()
     try {

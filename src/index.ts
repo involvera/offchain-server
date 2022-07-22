@@ -2,26 +2,26 @@ import https from 'https'
 import fs from 'fs'
 import { initServer } from './init'
 import { initRoutes } from './routes'
-import { IS_PRODUCTION } from './static'
-
-const PORT = 3020
+import { ServerConfiguration} from './static/config'
 
 initServer().then((server) => {
     initRoutes(server)
 
+    const { port, ssl, production } = ServerConfiguration
+
     //dev
-    if (!IS_PRODUCTION){
-        server.listen(PORT, () => {
-            console.log(`[DEVELOPEMENT MODE] Ready on http://localhost:${PORT}`)
+    if (!production){
+        server.listen(port, () => {
+            console.log(`[DEVELOPEMENT MODE] Ready on http://localhost:${port}`)
         })
     //prod
     } else {
-        const options = {
-            key: fs.readFileSync("/etc/letsencrypt/live/involvera.com/privkey.pem"),
-            cert: fs.readFileSync("/etc/letsencrypt/live/involvera.com/fullchain.pem")
-        };
-        https.createServer(options, server).listen(PORT, () => {
-            console.log(`[PRODUCTION MODE] Ready on http://localhost:${PORT}`)
+        const options = ssl && ssl.key && ssl.cert ? {
+            key: fs.readFileSync(ssl.key),
+            cert: fs.readFileSync(ssl.cert)
+        }: {}
+        https.createServer(options, server).listen(port, () => {
+            console.log(`[PRODUCTION MODE] Ready on http://localhost:${port}`)
         })
     }
 })

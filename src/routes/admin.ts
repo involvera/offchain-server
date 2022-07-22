@@ -1,11 +1,12 @@
 import express from 'express'
 import { alias, proposal, SocietyModel, thread, embed } from '../models'
-import { ADMIN_KEY, IS_PRODUCTION } from '../static'
+import { ServerConfiguration } from '../static/config'
+
 import { initCachedData } from '../init'
 import { CheckIfSocietyIDExistsByRouteParam } from './society'
 
 export const CheckIsDevelopment = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    if (IS_PRODUCTION){
+    if (ServerConfiguration.production){
         res.status(401)
         res.json({error: `Not development environment`})
         return
@@ -16,7 +17,7 @@ export const CheckIsDevelopment = (req: express.Request, res: express.Response, 
 export const CheckAdminKey = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const { admin_key } = req.headers
 
-    if (admin_key != ADMIN_KEY){
+    if (admin_key != ServerConfiguration.admin_key){
         res.status(401)
         res.json({error: `You can't perform this action.`})
         return

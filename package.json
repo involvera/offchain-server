@@ -7,8 +7,8 @@
   "license": "MIT",
   "scripts": {
     "test": "mocha --timeout 10000 -r ts-node/register tests/index.ts",
-    "start-prod": "tsc && NODE_ENV=production node ./dist/index.js",
-    "start-dev": "tsc && NODE_ENV=development node ./dist/index.js"
+    "start": "tsc && node ./dist/index.js",
+    "setconfig": "sh ./bash/init.sh"
   },
   "dependencies": {
     "@types/cors": "^2.8.12",

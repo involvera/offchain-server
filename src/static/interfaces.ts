@@ -57,3 +57,22 @@ export interface ICountReply {
     target_pkh: string
     count: number
 }
+
+interface IMYSQL {
+    host: string
+    user: string
+    password: string
+    database: string
+}
+interface ISSL {
+    key: string
+    cert: string
+}
+export interface IServerConfigJSON {
+    production: boolean
+    port: number
+    history_dir_path: string
+    mysql: IMYSQL
+    ssl?: ISSL
+    admin_key: string
+}
