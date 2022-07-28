@@ -6,7 +6,7 @@ export default (server: express.Express) => {
 
     const buildPPLimiter = rateLimit({
         windowMs: 60 * 60 * 1000 * 24,
-        max: 3, 
+        max: 10, 
         message:
             'Too many profil profile picture created on the last 24 hours, please try again after a day',
     })
