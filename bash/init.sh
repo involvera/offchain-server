@@ -10,6 +10,7 @@ echo '{
     "production": false,
     "port": 3020,
     "history_dir_path": "",
+    "assets_dir_path": "",
     "mysql": {
         "host": "localhost",
         "user": "",

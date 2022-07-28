@@ -74,5 +74,6 @@ export interface IServerConfigJSON {
     history_dir_path: string
     mysql: IMYSQL
     ssl?: ISSL
+    assets_dir_path:string
     admin_key: string
 }

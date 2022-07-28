@@ -1,9 +1,7 @@
 import express from 'express'
-import { ToPubKeyHash, GetAddressFromPubKeyHash, VerifySignatureHex } from 'wallet-util'
+import { ToPubKeyHash, GetAddressFromPubKeyHash, VerifySignatureHex, Sha256 } from 'wallet-util'
 import { alias, AliasModel } from '../models' 
 import { INTERVAL_DAY_CHANGE_ALIAS_USERNAME } from '../static'
-const smartcrop = require('smartcrop-sharp')
-import sharp from 'sharp'
 
 export const CheckIfAliasExistByBody = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const { author } = req.body
@@ -41,12 +39,13 @@ export const checkSignatureOnBody = async (req: express.Request, res: express.Re
     }
 }
 
-const updateAlias = async (req: express.Request, res: express.Response) => {
+const updateUsername = async (req: express.Request, res: express.Response) => {
     const { public_key } = req.headers
     const pkh = ToPubKeyHash(Buffer.from(public_key as string, 'hex'))
     const address = GetAddressFromPubKeyHash(pkh)
+    const { username } = req.body
     
-    const isUpdatingUsername = (a: AliasModel) => req.body.username !== a.get().username()
+    const isUpdatingUsername = (a: AliasModel) => username !== a.get().username()
 
     const isAllowedToUpdateUsername = (a: AliasModel) => {
         const nDaysAgo = new Date(new Date().getTime() - (INTERVAL_DAY_CHANGE_ALIAS_USERNAME * 1000 * 3600 * 24))
@@ -54,7 +53,6 @@ const updateAlias = async (req: express.Request, res: express.Response) => {
     }
 
     const getRightState = (a: AliasModel | null) => {
-        const { username, pp } = req.body
         if (!a)
             return {
                 address, username,
@@ -66,8 +64,6 @@ const updateAlias = async (req: express.Request, res: express.Response) => {
             ret.username = username
             ret.last_username_update = new Date()
         }
-        if (a.get().ppURI() || pp)
-            ret.pp = a.get().ppURI() || pp
         return ret
     }
 
@@ -92,33 +88,13 @@ const updateAlias = async (req: express.Request, res: express.Response) => {
     }
 }
 
-const buildPictureForProfile = async (req: express.Request, res: express.Response) => {
-    const applySmartCrop = async (src: any, dest:string, width: number, height: number) => {
-         const result = await smartcrop.crop(src, { width: width, height: height })
-        const crop = result.topCrop;
-        const r = await sharp(src)
-            .extract({ width: crop.width, height: crop.height, left: crop.x, top: crop.y })
-            .resize(width, height)
-            .jpeg({
-                quality: 100
-            })
-            .toFile(dest);
-        return r
-      }
-      await applySmartCrop((req.files?.image as any).path, './test.jpg', 96, 96)
-      res.sendStatus(200)
-}
-
-
 export default (server: express.Express) => {
     const { schemaValidator } = alias.expressTools().middleware()
 
-    server.post('/alias/buildimage', buildPictureForProfile)
-
-    server.post('/alias', 
+    server.post('/alias/username', 
         schemaValidator,
         checkSignatureOnBody,
-        updateAlias
+        updateUsername
     )
 
     server.head('/alias/:username', async (req: express.Request, res: express.Response) => { 

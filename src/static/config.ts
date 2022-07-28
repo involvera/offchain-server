@@ -29,6 +29,11 @@ const loadServerConfiguration = async () => {
         process.exit(0)
     }
 
+    if (!ServerConfiguration.assets_dir_path){
+        console.log('no `assets_dir_path` configuration set in config.json')
+        process.exit(0)
+    }
+
     if (!ServerConfiguration.mysql.database){
         console.log('no `database` field set in the mysql object in config.json')
         process.exit(0)
@@ -48,7 +53,6 @@ const loadServerConfiguration = async () => {
         ServerConfiguration.admin_key = Sha256(randomBytes(32)).toString('hex')
         !ServerConfiguration.production && console.log(`No admin_key found in config.json.\nFor this session the admin key is: "${ServerConfiguration.admin_key}"\n`)
     }
-
 }
 
 export {
