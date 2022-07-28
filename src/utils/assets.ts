@@ -6,8 +6,8 @@ import { Sha256 } from 'wallet-util'
 import path from 'path'
 import fs from 'fs'
 
-export const getPX64FolderPath = () => path.join(ServerConfiguration.user_assets_path, 'pp64')
-export const getPX500FolderPath = () => path.join(ServerConfiguration.user_assets_path, 'pp500')
+export const getPX64FolderPath = () => path.join(ServerConfiguration.assets_dir_path, 'pp64')
+export const getPX500FolderPath = () => path.join(ServerConfiguration.assets_dir_path, 'pp500')
 
 interface IBuildPPSettings {
     src: string
