@@ -2,6 +2,8 @@ import express from 'express'
 import { ToPubKeyHash, GetAddressFromPubKeyHash, VerifySignatureHex } from 'wallet-util'
 import { alias, AliasModel } from '../models' 
 import { INTERVAL_DAY_CHANGE_ALIAS_USERNAME } from '../static'
+const smartcrop = require('smartcrop-sharp')
+import sharp from 'sharp'
 
 export const CheckIfAliasExistByBody = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const { author } = req.body
@@ -28,11 +30,10 @@ export const CheckIfAliasExistByURLParam = async (req: express.Request, res: exp
     next()
 }
 
-export const checkSignatureOnUsername = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+export const checkSignatureOnBody = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const { signature, public_key } = req.headers
-    const { username } = req.body
 
-    if (VerifySignatureHex({signature_hex: signature as string, public_key_hex: public_key as string}, Buffer.from(username))){
+    if (VerifySignatureHex({signature_hex: signature as string, public_key_hex: public_key as string}, Buffer.from(JSON.stringify(req.body)))){
         next()
     } else {
         res.status(401)
@@ -40,60 +41,84 @@ export const checkSignatureOnUsername = async (req: express.Request, res: expres
     }
 }
 
+const updateAlias = async (req: express.Request, res: express.Response) => {
+    const { public_key } = req.headers
+    const pkh = ToPubKeyHash(Buffer.from(public_key as string, 'hex'))
+    const address = GetAddressFromPubKeyHash(pkh)
+    
+    const isUpdatingUsername = (a: AliasModel) => req.body.username !== a.get().username()
+
+    const isAllowedToUpdateUsername = (a: AliasModel) => {
+        const nDaysAgo = new Date(new Date().getTime() - (INTERVAL_DAY_CHANGE_ALIAS_USERNAME * 1000 * 3600 * 24))
+        return !isUpdatingUsername(a) || a.get().lastUsernameUpdate() < nDaysAgo
+    }
+
+    const getRightState = (a: AliasModel | null) => {
+        const { username, pp } = req.body
+        if (!a)
+            return {
+                address, username,
+                last_username_update: new Date('2000/01/01')
+            }
+
+        const ret: any = { address }
+        if (isUpdatingUsername(a)){
+            ret.username = username
+            ret.last_username_update = new Date()
+        }
+        if (a.get().ppURI() || pp)
+            ret.pp = a.get().ppURI() || pp
+        return ret
+    }
+
+    try {
+        let a = await alias.quick().find({ address }) as AliasModel
+        if (!a){
+            a = await alias.quick().create(getRightState(null)) as AliasModel
+            res.status(201)
+        } else {
+            if (!isAllowedToUpdateUsername(a)){
+                res.status(401)
+                res.json(`you already updated your username less than ${INTERVAL_DAY_CHANGE_ALIAS_USERNAME} days ago.`)
+                return
+            }
+            await a.setState(getRightState(a)).saveToDB()
+            res.status(200)
+        }
+        res.json(a.to().plain())
+    } catch (err){
+        res.status(500)
+        res.json(err.toString())
+    }
+}
+
+const buildPictureForProfile = async (req: express.Request, res: express.Response) => {
+    const applySmartCrop = async (src: any, dest:string, width: number, height: number) => {
+         const result = await smartcrop.crop(src, { width: width, height: height })
+        const crop = result.topCrop;
+        const r = await sharp(src)
+            .extract({ width: crop.width, height: crop.height, left: crop.x, top: crop.y })
+            .resize(width, height)
+            .jpeg({
+                quality: 100
+            })
+            .toFile(dest);
+        return r
+      }
+      await applySmartCrop((req.files?.image as any).path, './test.jpg', 96, 96)
+      res.sendStatus(200)
+}
+
+
 export default (server: express.Express) => {
     const { schemaValidator } = alias.expressTools().middleware()
 
+    server.post('/alias/buildimage', buildPictureForProfile)
+
     server.post('/alias', 
         schemaValidator,
-        checkSignatureOnUsername,
-        async (req: express.Request, res: express.Response) => {
-            const { public_key } = req.headers
-            const pkh = ToPubKeyHash(Buffer.from(public_key as string, 'hex'))
-            const address = GetAddressFromPubKeyHash(pkh)
-            
-            const isUpdatingUsername = (a: AliasModel) => req.body.username !== a.get().username()
-
-            const isAllowedToUpdateUsername = (a: AliasModel) => {
-                const nDaysAgo = new Date(new Date().getTime() - (INTERVAL_DAY_CHANGE_ALIAS_USERNAME * 1000 * 3600 * 24))
-                return !isUpdatingUsername(a) || a.get().lastUsernameUpdate() < nDaysAgo
-            }
-
-            const getRightState = (a: AliasModel | null) => {
-                const { username } = req.body
-                if (!a)
-                    return {
-                        address, username,
-                        last_username_update: new Date('2000/01/01')
-                    }
-
-                const ret: any = { address }
-                if (isUpdatingUsername(a)){
-                    ret.username = username
-                    ret.last_username_update = new Date()
-                }
-                return ret
-            }
-
-            try {
-                let a = await alias.quick().find({ address }) as AliasModel
-                if (!a){
-                    a = await alias.quick().create(getRightState(null)) as AliasModel
-                    res.status(201)
-                } else {
-                    if (!isAllowedToUpdateUsername(a)){
-                        res.status(401)
-                        res.json(`you already updated your username less than ${INTERVAL_DAY_CHANGE_ALIAS_USERNAME} days ago.`)
-                        return
-                    }
-                    await a.setState(getRightState(a)).saveToDB()
-                    res.status(200)
-                }
-                res.json(a.to().plain())
-            } catch (err){
-                res.status(500)
-                res.json(err.toString())
-            }
-        }
+        checkSignatureOnBody,
+        updateAlias
     )
 
     server.head('/alias/:username', async (req: express.Request, res: express.Response) => { 

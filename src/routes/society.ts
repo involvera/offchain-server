@@ -33,6 +33,7 @@ export default (server: express.Express) => {
 
     server.put('/society/:sid', 
     CheckAdminKey,
+    CheckIsDevelopment,
     schemaValidator,
     CheckIfSocietyIDExistsByRouteParam,
     async (req: express.Request, res: express.Response) => {

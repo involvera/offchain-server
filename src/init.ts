@@ -1,5 +1,7 @@
 import express from 'express'
-import formData from 'express-form-data'
+// import formData from 'express-form-data'
+import formidable from 'express-formidable';
+
 import morgan from 'morgan'
 import { config } from 'elzeard'
 import { cachedSocieties } from './models'
@@ -16,7 +18,7 @@ export const initServer = async () => {
 
     const server = express()
     server.use(express.json() as any);
-    server.use(formData.parse() as any)
+    server.use(formidable());
     server.use(morgan('tiny') as any)
 
     server.use(function(req, res, next) {
