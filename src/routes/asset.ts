@@ -1,9 +1,17 @@
 import express from 'express'
 import { buildAllPP, getPX500FolderPath, getPX64FolderPath } from '../utils/assets'
+import rateLimit from 'express-rate-limit'
 
 export default (server: express.Express) => {
 
-    server.post('/asset', async (req: express.Request, res: express.Response) => {
+    const buildPPLimiter = rateLimit({
+        windowMs: 60 * 60 * 1000 * 24,
+        max: 3, 
+        message:
+            'Too many profil profile picture created on the last 24 hours, please try again after a day',
+    })
+
+    server.post('/asset/pp', buildPPLimiter, async (req: express.Request, res: express.Response) => {
         try {
             res.status(201)
             res.send(await buildAllPP((req.files?.image as any).path))

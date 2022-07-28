@@ -7,6 +7,7 @@ import { config } from 'elzeard'
 import { cachedSocieties } from './models'
 import cors from 'cors'
 import { loadServerConfiguration, ServerConfiguration} from './static/config'
+import ExpressBrute from 'express-brute'
 
 
 export const initCachedData = async () => {
@@ -30,6 +31,11 @@ export const initServer = async () => {
     });
 
     server.use(cors())
+
+    // stores state locally, don't use this in production
+    var store = new ExpressBrute.MemoryStore();
+    var bruteforce = new ExpressBrute(store);
+    server.use(bruteforce.prevent)
 
     config.setHistoryDirPath(ServerConfiguration.history_dir_path)
     config.setMySQLConfig(Object.assign({timezone: 'utc'}, ServerConfiguration.mysql))
