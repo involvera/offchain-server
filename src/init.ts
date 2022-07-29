@@ -9,7 +9,6 @@ import cors from 'cors'
 import { loadServerConfiguration, ServerConfiguration} from './static/config'
 import ExpressBrute from 'express-brute'
 
-
 export const initCachedData = async () => {
   await cachedSocieties.pullAll(); 
 }
@@ -18,8 +17,9 @@ export const initServer = async () => {
     await loadServerConfiguration()
 
     const server = express()
-    server.use(express.json() as any);
-    server.use(formidable());
+    server.use(express.json({
+      limit: '4MB'
+    }))
     server.use(morgan('tiny') as any)
 
     server.use(function(req, res, next) {

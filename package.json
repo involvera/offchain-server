@@ -8,7 +8,7 @@
   "scripts": {
     "test": "mocha --timeout 10000 -r ts-node/register tests/index.ts",
     "start": "tsc && node ./dist/index.js",
-    "setconfig": "sh ./bash/init.sh"
+    "setconfig": "source ./bash/init.sh"
   },
   "dependencies": {
     "@types/express-brute": "^1.0.1",

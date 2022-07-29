@@ -21,6 +21,8 @@ export class AliasModel extends Model {
         address: Joi.string().regex(/^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,39}$/).max(39).unique().required().group(['author']),
         created_at: Joi.date().default('now'),
         pp: Joi.string().max(255).group(['author']),
+        pp500: Joi.string().max(255),
+        last_pp_update: Joi.date().default(() => new Date(0)),
         username: Joi.string().max(16).lowercase().regex(/^[a-z0-9_]{3,16}$/).unique().group(['author']),
         last_username_update: Joi.date().default(() => new Date(0))
     })
@@ -36,7 +38,8 @@ export class AliasModel extends Model {
             ppURI: (): string | null => this.state.pp,
             username: (): string => this.state.username,
             createdAt: (): Date => this.state.created_at,
-            lastUsernameUpdate: (): Date => this.state.last_username_update
+            lastUsernameUpdate: (): Date => this.state.last_username_update,
+            lastPPUpdate: (): Date => this.state.last_pp_update
         }
     }
 }

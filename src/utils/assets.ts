@@ -62,21 +62,37 @@ export const build500PixelPP = (src: string, dest: string) => {
     })
 }
 
-export const buildAllPP = async (src: string) => {
+const randomFileNameJPG = () => Sha256(crypto.randomBytes(64)).toString('hex') + '.jpg'
 
-    const mkdir = (p:string) => {
-        if (!fs.existsSync(p)) {
-            fs.mkdirSync(p, {recursive: true});
-        }
-    }
+export const buildAllPP = async (src: string) => {
     mkdir(getPX64FolderPath())
     mkdir(getPX500FolderPath())
 
-    const filename = Sha256(crypto.randomBytes(64)).toString('hex') + '.jpg'
+    const filename = randomFileNameJPG()
 
     await Promise.all([
         build64PixelPP(src, path.join(getPX64FolderPath(), filename)),
         build500PixelPP(src, path.join(getPX500FolderPath(), filename)),
     ])
     return filename
+}
+
+const mkdir = (p:string) => {
+    if (!fs.existsSync(p)) {
+        fs.mkdirSync(p, {recursive: true});
+    }
+}
+
+export const createTemporaryFile = async (base64: string): Promise<string | null> => {
+    try {
+        var data = base64.replace(/^data:image\/\w+;base64,/, '');
+        const TMP_PATH = `/tmp/involvera/assets`
+        mkdir(TMP_PATH)
+        const filename = path.join(TMP_PATH, randomFileNameJPG())
+    
+        await fs.writeFileSync(filename, data, {encoding: 'base64'})
+        return filename
+    } catch (e){
+        return null
+    }
 }

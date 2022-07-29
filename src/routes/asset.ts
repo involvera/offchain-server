@@ -1,6 +1,7 @@
 import express from 'express'
-import { buildAllPP, getPX500FolderPath, getPX64FolderPath } from '../utils/assets'
+import { buildAllPP, createTemporaryFile, getPX500FolderPath, getPX64FolderPath } from '../utils/assets'
 import rateLimit from 'express-rate-limit'
+import fs from 'fs'
 
 export default (server: express.Express) => {
 
@@ -12,12 +13,22 @@ export default (server: express.Express) => {
     })
 
     server.post('/asset/pp', buildPPLimiter, async (req: express.Request, res: express.Response) => {
+        const { image } = req.body
+        const tmpFP = await createTemporaryFile(image)
+        if (!tmpFP){
+            res.status(401)
+            res.json("wrong base64 file")
+            return
+        }
+
         try {
             res.status(201)
-            res.send(await buildAllPP((req.files?.image as any).path))
+            res.send(await buildAllPP(tmpFP))
         } catch (e: any){
             res.status(500)
             res.json({error: e.toString()})
+        } finally {
+            fs.rmSync(tmpFP)
         }
     })
 

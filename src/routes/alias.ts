@@ -88,6 +88,11 @@ const updateUsername = async (req: express.Request, res: express.Response) => {
     }
 }
 
+export const updatePP = async (req: express.Request, res: express.Response) => {
+
+}
+
+
 export default (server: express.Express) => {
     const { schemaValidator } = alias.expressTools().middleware()
 
