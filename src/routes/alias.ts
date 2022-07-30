@@ -2,6 +2,7 @@ import express from 'express'
 import { ToPubKeyHash, GetAddressFromPubKeyHash, VerifySignatureHex, Sha256 } from 'wallet-util'
 import { alias, AliasModel } from '../models' 
 import { INTERVAL_DAY_CHANGE_ALIAS_USERNAME } from '../static'
+import { downloadDistantImage, downloadLocalImage } from '../utils'
 
 export const CheckIfAliasExistByBody = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const { author } = req.body
@@ -89,7 +90,56 @@ const updateUsername = async (req: express.Request, res: express.Response) => {
 }
 
 export const updatePP = async (req: express.Request, res: express.Response) => {
+    const { public_key } = req.headers
+    const pkh = ToPubKeyHash(Buffer.from(public_key as string, 'hex'))
+    const address = GetAddressFromPubKeyHash(pkh)
+    const { pp, pp500, asset_name } = req.body
 
+    const compare = async (size: 64 | 500) => {
+        const local = await downloadLocalImage(asset_name, size)
+        const distant = await downloadDistantImage((size === 500 ? pp500 : pp) || '')
+        return Buffer.isBuffer(local) && Buffer.isBuffer(distant) && local.equals(distant)
+    }
+
+    if (!await compare(64) || !await compare(500)){
+        res.status(401)
+        res.json("image previously built doesn't match distant image")
+        return
+    }
+
+    const isAllowedToUpdatePP = (a: AliasModel) => {
+        const nDaysAgo = new Date(new Date().getTime() - (INTERVAL_DAY_CHANGE_ALIAS_USERNAME * 1000 * 3600 * 24))
+        return a.get().lastPPUpdate() < nDaysAgo
+    }
+
+    const getRightState = (a: AliasModel | null) => {
+        const ret: any = { address }
+        ret.pp = pp
+        ret.pp500 = pp500
+        ret.last_pp_update = new Date()
+        return ret
+    }
+
+    try {
+        let a = await alias.quick().find({ address }) as AliasModel
+        if (!a){
+            res.status(404)
+            res.send('alias not found, you need to create an username first')
+            return
+        }
+        if (!isAllowedToUpdatePP(a)){
+            res.status(401)
+            res.json(`you already updated your profil picture less than ${INTERVAL_DAY_CHANGE_ALIAS_USERNAME} days ago.`)
+            return
+        }
+        await a.setState(getRightState(a)).saveToDB()
+        res.status(200)
+        res.json(a.to().plain())
+    } catch (err){
+        res.status(500)
+        res.json(err.toString())
+    }
+    res.sendStatus(200)
 }
 
 
@@ -100,6 +150,11 @@ export default (server: express.Express) => {
         schemaValidator,
         checkSignatureOnBody,
         updateUsername
+    )
+
+    server.post('/alias/pp', 
+        checkSignatureOnBody,
+        updatePP
     )
 
     server.head('/alias/:username', async (req: express.Request, res: express.Response) => { 

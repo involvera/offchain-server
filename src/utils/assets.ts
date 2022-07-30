@@ -1,10 +1,12 @@
-import { ServerConfiguration} from '../static/config'
 const smartcrop = require('smartcrop-sharp')
 import sharp from 'sharp'
 import crypto from 'crypto'
 import { Sha256 } from 'wallet-util'
 import path from 'path'
 import fs from 'fs'
+import axios from 'axios'
+
+import { ServerConfiguration} from '../static/config'
 
 export const getPX64FolderPath = () => path.join(ServerConfiguration.assets_dir_path, 'pp64')
 export const getPX500FolderPath = () => path.join(ServerConfiguration.assets_dir_path, 'pp500')
@@ -96,3 +98,23 @@ export const createTemporaryFile = async (base64: string): Promise<string | null
         return null
     }
 }
+
+export const downloadLocalImage = async (filename: string, size: 64 | 500): Promise<Buffer | null> => {
+    try {
+        const f = await fs.readFileSync(path.join(size === 64 ? getPX64FolderPath() : getPX500FolderPath(), filename))
+        return f
+    } catch (e){
+        return null
+    }
+}
+
+export const downloadDistantImage = async (url: string) => {
+    try {
+        const response = await axios.get(url,  { responseType: 'arraybuffer' })
+        if (response.status === 200)
+            return Buffer.from(response.data, "utf-8")        
+        return null
+    } catch (e){
+        return null
+    }
+  }
