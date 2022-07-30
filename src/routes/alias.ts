@@ -1,7 +1,7 @@
 import express from 'express'
 import { ToPubKeyHash, GetAddressFromPubKeyHash, VerifySignatureHex, Sha256 } from 'wallet-util'
 import { alias, AliasModel } from '../models' 
-import { INTERVAL_DAY_CHANGE_ALIAS_USERNAME } from '../static'
+import { INTERVAL_SEC_CHANGE_ALIAS } from '../static'
 import { downloadDistantImage, downloadLocalImage } from '../utils'
 
 export const CheckIfAliasExistByBody = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -54,7 +54,7 @@ const updateUsername = async (req: express.Request, res: express.Response) => {
     const isUpdatingUsername = (a: AliasModel) => username !== a.get().username()
 
     const isAllowedToUpdateUsername = (a: AliasModel) => {
-        const nDaysAgo = new Date(new Date().getTime() - (INTERVAL_DAY_CHANGE_ALIAS_USERNAME * 1000 * 3600 * 24))
+        const nDaysAgo = new Date(new Date().getTime() - (INTERVAL_SEC_CHANGE_ALIAS * 1000))
         return !isUpdatingUsername(a) || a.get().lastUsernameUpdate() < nDaysAgo
     }
 
@@ -80,7 +80,7 @@ const updateUsername = async (req: express.Request, res: express.Response) => {
             res.status(201)
         } else {
             if (!isAllowedToUpdateUsername(a)){
-                res.status(401).json(`you already updated your username less than ${INTERVAL_DAY_CHANGE_ALIAS_USERNAME} days ago.`)
+                res.status(401).json(`you already updated your username recently, please try again later`)
                 return
             }
             await a.setState(getRightState(a)).saveToDB()
@@ -105,7 +105,7 @@ export const updatePP = async (req: express.Request, res: express.Response) => {
     }
 
     const isAllowedToUpdatePP = (a: AliasModel) => {
-        const nDaysAgo = new Date(new Date().getTime() - (INTERVAL_DAY_CHANGE_ALIAS_USERNAME * 1000 * 3600 * 24))
+        const nDaysAgo = new Date(new Date().getTime() - (INTERVAL_SEC_CHANGE_ALIAS * 1000))
         return a.get().lastPPUpdate() < nDaysAgo
     }
 
@@ -135,7 +135,7 @@ export const updatePP = async (req: express.Request, res: express.Response) => {
             return
         }
         if (!isAllowedToUpdatePP(a)){
-            res.status(401).json(`you already updated your profil picture less than ${INTERVAL_DAY_CHANGE_ALIAS_USERNAME} days ago.`)
+            res.status(401).json(`you already updated your profil picture recently, please try again later`)
             return
         }
     } catch (e) {

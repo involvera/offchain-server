@@ -16,17 +16,14 @@ export default (server: express.Express) => {
         const { image } = req.body
         const tmpFP = await createTemporaryFile(image)
         if (!tmpFP){
-            res.status(401)
-            res.json("wrong base64 file")
+            res.status(401).json("wrong base64 file")
             return
         }
 
         try {
-            res.status(201)
-            res.send(await buildAllPP(tmpFP))
+            res.status(201).send(await buildAllPP(tmpFP))
         } catch (e: any){
-            res.status(500)
-            res.json({error: e.toString()})
+            res.status(500).json({error: e.toString()})
         } finally {
             fs.rmSync(tmpFP)
         }
