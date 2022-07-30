@@ -37,10 +37,14 @@ export class AliasModel extends Model {
     get = () => {
         return {
             ID: (): number => this.state.id,
+            createdAt: (): Date => this.state.created_at,
+            originSID: (): number => this.state.origin_sid,
+
             address: (): string => this.state.address,
             ppURI: (): string | null => this.state.pp,
+            pp500URI: (): string | null => this.state.pp500,
             username: (): string => this.state.username,
-            createdAt: (): Date => this.state.created_at,
+            
             lastUsernameUpdate: (): Date => this.state.last_username_update,
             lastPPUpdate: (): Date => this.state.last_pp_update
         }

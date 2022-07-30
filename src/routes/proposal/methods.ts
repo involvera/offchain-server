@@ -42,8 +42,7 @@ export const PostProposal = async  (req: express.Request, res: express.Response,
 
     const errForeign = await foreignConstraint(data)
     if (errForeign){
-        res.status(409)
-        res.json(errForeign)
+        res.status(409).json(errForeign)
         return
     }
 
@@ -60,7 +59,6 @@ export const PostProposal = async  (req: express.Request, res: express.Response,
         const j = await m.renderViewJSON(null)
         res.status(201).json(j)
     } catch (e){
-        res.status(500)
-        res.json(e.toString())
+        res.status(500).json(e.toString())
     }
 }

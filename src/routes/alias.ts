@@ -9,8 +9,7 @@ export const CheckIfAliasExistByBody = async (req: express.Request, res: express
 
     const a = await alias.findByAddress(author)
     if (!a){
-        res.status(404)
-        res.json({error: "You need to create an alias on your address before adding content."})
+        res.status(404).json({error: "You need to create an alias on your address before adding content."})
         return
     }
     res.locals.alias = a
@@ -35,8 +34,7 @@ export const checkSignatureOnBody = async (req: express.Request, res: express.Re
     if (VerifySignatureHex({signature_hex: signature as string, public_key_hex: public_key as string}, Buffer.from(JSON.stringify(req.body)))){
         next()
     } else {
-        res.status(401)
-        res.json({error: `Wrong signature on content.`})
+        res.status(401).json({error: `Wrong signature on content.`})
     }
 }
 
@@ -82,8 +80,7 @@ const updateUsername = async (req: express.Request, res: express.Response) => {
             res.status(201)
         } else {
             if (!isAllowedToUpdateUsername(a)){
-                res.status(401)
-                res.json(`you already updated your username less than ${INTERVAL_DAY_CHANGE_ALIAS_USERNAME} days ago.`)
+                res.status(401).json(`you already updated your username less than ${INTERVAL_DAY_CHANGE_ALIAS_USERNAME} days ago.`)
                 return
             }
             await a.setState(getRightState(a)).saveToDB()
@@ -91,8 +88,7 @@ const updateUsername = async (req: express.Request, res: express.Response) => {
         }
         res.json(a.to().plain())
     } catch (err){
-        res.status(500)
-        res.json(err.toString())
+        res.status(500).json(err.toString())
     }
 }
 
@@ -123,13 +119,11 @@ export const updatePP = async (req: express.Request, res: express.Response) => {
 
     try {
         if (!await compare(64) || !await compare(500)){
-            res.status(401)
-            res.json("image previously built doesn't match distant image")
+            res.status(401).json("image previously built doesn't match distant image")
             return
         }
     } catch (e){
-        res.status(500)
-        res.json(e.toString())
+        res.status(500).json(e.toString())
         return
     }
 
@@ -137,18 +131,15 @@ export const updatePP = async (req: express.Request, res: express.Response) => {
     try {
         a = await alias.quick().find({ address }) as AliasModel
         if (!a){
-            res.status(404)
-            res.send('alias not found, you need to create an username first')
+            res.status(404).send('alias not found, you need to create an username first')
             return
         }
         if (!isAllowedToUpdatePP(a)){
-            res.status(401)
-            res.json(`you already updated your profil picture less than ${INTERVAL_DAY_CHANGE_ALIAS_USERNAME} days ago.`)
+            res.status(401).json(`you already updated your profil picture less than ${INTERVAL_DAY_CHANGE_ALIAS_USERNAME} days ago.`)
             return
         }
     } catch (e) {
-        res.status(500)
-        res.json(e.toString())
+        res.status(500).json(e.toString())
         return
     }
 
@@ -161,11 +152,9 @@ export const updatePP = async (req: express.Request, res: express.Response) => {
 
     try {
         await a.setState(getRightState(a)).saveToDB()
-        res.status(200)
-        res.json(a.to().plain())
+        res.status(200).json(a.to().plain())
     } catch (err){
-        res.status(500)
-        res.json(err.toString())
+        res.status(500).json(err.toString())
     }
 }
 
@@ -192,8 +181,21 @@ export default (server: express.Express) => {
                 res.sendStatus(200)
             }
         } catch (e){
-            res.status(500)
-            res.json(e.toString())
+            res.status(500).json(e.toString())
+        }
+    })
+
+    server.get('/alias/:username/pp/500', async (req: express.Request, res: express.Response) => { 
+        const { username } = req.params     
+        try {
+            const a = await alias.findByUsername(username)
+            if (!a){
+                res.sendStatus(404)
+            } else {
+                res.status(200).send(a.get().pp500URI())
+            }
+        } catch (e){
+            res.status(500).json(e.toString())
         }
     })
 
@@ -204,12 +206,10 @@ export default (server: express.Express) => {
             if (!a)
                 res.sendStatus(404)
             else {
-                res.status(200)
-                res.json(a.to().filterGroup('author').plain())
+                res.status(200).json(a.to().filterGroup('author').plain())
             }
         } catch (e){
-            res.status(500)
-            res.json(e.toString())
+            res.status(500).json(e.toString())
         }
     })
 }

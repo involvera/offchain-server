@@ -25,14 +25,12 @@ export const GetAndAssignLinkToThread = async (req: express.Request, res: expres
             })
             next()
         } else {
-            const text = response.data
-            res.status(response.status)
-            res.json({error: text})
+            const {data, status} = response
+            res.status(status).json({error: data})
             return
         }
     } catch (e){
-        res.status(500)
-        res.json(e.toString())
+        res.status(500).json(e.toString())
     }
 }
 
@@ -45,8 +43,7 @@ export const CheckIfThreadAlreadyRecorded = async (req: express.Request, res: ex
         next()
         return
     }
-    res.status(401)
-    res.json({error: `Thread is already recorded.`})
+    res.status(401).json({error: `Thread is already recorded.`})
     return
 }
 
@@ -60,15 +57,13 @@ export const BuildEmbed = async (req: express.Request, res: express.Response, ne
             const target = await t.get().target()
             await e.setState({ content: t.get().preview(target).zipped().embed_code }).saveToDB()
         } catch(err){
-            res.status(500)
-            res.json(err.toString())
+            res.status(500).json(err.toString())
         }
     } else {
         try {
             await embed.create().thread(t)
         } catch (err){
-            res.status(500)
-            res.json(err.toString())
+            res.status(500).json(err.toString())
         }
     }
     next()
@@ -78,14 +73,12 @@ export const CheckContentOrTitlePresence = (req: express.Request, res: express.R
     const { title, content } = req.body
     if (!title){
         if (content.length < 20){
-            res.status(406)
-            res.json(`Thread's content must contain 20 characters minimum.`)
+            res.status(406).json(`Thread's content must contain 20 characters minimum.`)
             return
         }
     } else if (!content){
         if (title.length < 20){
-            res.status(406)
-            res.json(`Thread's title must contain 20 characters minimum.`)
+            res.status(406).json(`Thread's title must contain 20 characters minimum.`)
             return
         }
     }

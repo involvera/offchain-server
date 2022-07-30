@@ -32,8 +32,7 @@ export default (server: express.Express) => {
             const a = await alias.findByAddress(address)
             const response = await fetchUserWalletInfo(s, address)
             if (response.status == 200){
-                res.status(200)
-                res.json({
+                res.status(200).json({
                     alias: !!a ? a.to().filterGroup('author').plain() : AliasModel.defaultAliasWithAuthorGroup(address),
                     info: response.data
                 })
@@ -42,8 +41,7 @@ export default (server: express.Express) => {
                 res.json(response.data)
             }
         } catch (e){
-            res.status(500)
-            res.json(e.toString())
+            res.status(500).json(e.toString())
         }
     })
 
@@ -69,8 +67,7 @@ export default (server: express.Express) => {
             }
         }
 
-        res.status(200)
-        res.json(username + suffix)
+        res.status(200).json(username + suffix)
     })
 
 }

@@ -1,14 +1,12 @@
 import express from 'express'
 import { alias, proposal, SocietyModel, thread, embed } from '../models'
 import { ServerConfiguration } from '../static/config'
-
 import { initCachedData } from '../init'
 import { CheckIfSocietyIDExistsByRouteParam } from './society'
 
 export const CheckIsDevelopment = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (ServerConfiguration.production){
-        res.status(401)
-        res.json({error: `Not development environment`})
+        res.status(401).json({error: `Not development environment`})
         return
     }
     next()
@@ -18,8 +16,7 @@ export const CheckAdminKey = async (req: express.Request, res: express.Response,
     const { admin_key } = req.headers
 
     if (admin_key != ServerConfiguration.admin_key){
-        res.status(401)
-        res.json({error: `You can't perform this action.`})
+        res.status(401).json({error: `You can't perform this action.`})
         return
     } 
     next()
@@ -36,16 +33,15 @@ export default (server: express.Express) => {
             if (s){
                 await thread.quick().remove({sid: s.get().ID() })
                 await proposal.quick().remove({sid: s.get().ID() })
-                await alias.quick().remove('id', '<', 2_000_000_000)
+                await alias.quick().remove({origin_sid: s.get().ID()})
                 await embed.quick().remove({sid: s.get().ID() })
                 await initCachedData()
                 res.sendStatus(200)
                 return
             }
         } catch (err){
-            res.status(500)
             console.log(err)
-            res.json(err.toString())
+            res.status(500).json(err.toString())
         }
     })
 }

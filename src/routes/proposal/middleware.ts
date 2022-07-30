@@ -19,8 +19,7 @@ export const CheckContent = (req: express.Request, res: express.Response, next: 
             return
         }
     }
-    res.status(406)
-    res.json({error: "Wrong length of content."})
+    res.status(406).json({error: "Wrong length of content."})
     return
 }
 
@@ -30,8 +29,7 @@ export const CheckSignatureContent = (req: express.Request, res: express.Respons
     if (VerifySignatureHex({signature_hex: signature as string, public_key_hex: public_key as string}, Buffer.from(content))){
         next()
     } else {
-        res.status(401)
-        res.json({error: `Wrong signature on content.`})         
+        res.status(401).json({error: `Wrong signature on content.`})         
     }
 }
 
@@ -44,8 +42,7 @@ export const CheckIfProposalAlreadyRecorded = async (req: express.Request, res: 
         next()
         return
     }
-    res.status(401)
-    res.json({error: `Proposal is already recorded.`})
+    res.status(401).json({error: `Proposal is already recorded.`})
     return
 }
 
@@ -68,12 +65,10 @@ export const GetAndAssignLinkToProposal = async (req: express.Request, res: expr
             })
             next()
         } else {
-            res.status(404)
-            res.json({error: json})
+            res.status(404).json({error: json})
         }
     } catch (e){
-        res.status(500)
-        res.json(e.toString())
+        res.status(500).json(e.toString())
     }
 }
 
@@ -88,8 +83,7 @@ export const BuildEmbed = async (req: express.Request, res: express.Response, ne
     try {
         await p.pullOnChainData(s)
     } catch (e){
-        res.status(500)
-        res.json(e.toString())
+        res.status(500).json(e.toString())
         return        
     }
     
@@ -97,16 +91,14 @@ export const BuildEmbed = async (req: express.Request, res: express.Response, ne
         try {
             await e.setState({ content: p.get().preview().zipped().embed_code }).saveToDB()
         } catch(err){
-            res.status(500)
-            res.json(err.toString())
+            res.status(500).json(err.toString())
             return
         }
     } else {
         try {
             await embed.create().proposal(p)
         } catch (err){
-            res.status(500)
-            res.json(err.toString())
+            res.status(500).json(err.toString())
             return
         }
     }

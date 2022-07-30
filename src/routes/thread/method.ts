@@ -90,8 +90,7 @@ export const PostThread = async  (req: express.Request, res: express.Response, n
 
     const errForeign = await foreignConstraint(data)
     if (errForeign){
-        res.status(409)
-        res.json(errForeign)
+        res.status(409).json(errForeign)
         return
     }
 
@@ -101,8 +100,6 @@ export const PostThread = async  (req: express.Request, res: express.Response, n
         const m = await thread.quick().create(data) as ThreadModel
         res.status(201).json(await m.renderViewJSON(s))
     } catch (e){
-        console.log(e)
-        res.status(500)
-        res.json(e.toString())
+        res.status(500).json(e.toString())
     }
 }

@@ -12,8 +12,7 @@ const getSocietyIfExists = async (sid: number, res: express.Response, next: expr
         res.locals.society = s
         next()
     } catch (e){
-        res.status(500)
-        res.json(e.toString())
+        res.status(500).json(e.toString())
     }
 }
 
@@ -40,11 +39,9 @@ export default (server: express.Express) => {
         const s = res.locals.society as SocietyModel
         try {
             await s.setState(req.body).saveToDB()
-            res.status(200)
-            res.json(s.to().plain())
+            res.status(200).json(s.to().plain())
         } catch (e){
-            res.status(500)
-            res.json(e.toString())
+            res.status(500).json(e.toString())
         }
     })
 
@@ -56,11 +53,9 @@ export default (server: express.Express) => {
             const ss = await s.pullStats()
             const aliases = await alias.pullByAddresses(ss.stats.most_active_addresses)
             ss.stats.most_active_addresses = aliases.local().to().filterGroup('author').plain()
-            res.status(200)
-            res.json(ss)
+            res.status(200).json(ss)
         } catch (e){
-            res.status(500)
-            res.json(e.toString())
+            res.status(500).json(e.toString())
         }
     })
 }

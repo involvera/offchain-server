@@ -46,8 +46,7 @@ export default (server: express.Express) => {
         const proposals = ps.length > 0 ? ret[0].local().map((e: EmbedModel) => e.get().content()) : []
         const threads = ts.length > 0 ? ret[1].local().map((e: EmbedModel) => e.get().content()) : []
  
-        res.status(200)
-        res.json({
+        res.status(200).json({
             proposals,
             threads
         })
