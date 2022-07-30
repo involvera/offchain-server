@@ -46,6 +46,13 @@ const updateUsername = async (req: express.Request, res: express.Response) => {
     const address = GetAddressFromPubKeyHash(pkh)
     const { username } = req.body
     
+    try {
+        alias.newNode(undefined).mustValidateSchema({ username, address })
+    } catch (err){
+        res.status(422).json({ error: err.toString() })
+        return
+    }
+
     const isUpdatingUsername = (a: AliasModel) => username !== a.get().username()
 
     const isAllowedToUpdateUsername = (a: AliasModel) => {
@@ -101,12 +108,6 @@ export const updatePP = async (req: express.Request, res: express.Response) => {
         return Buffer.isBuffer(local) && Buffer.isBuffer(distant) && local.equals(distant)
     }
 
-    if (!await compare(64) || !await compare(500)){
-        res.status(401)
-        res.json("image previously built doesn't match distant image")
-        return
-    }
-
     const isAllowedToUpdatePP = (a: AliasModel) => {
         const nDaysAgo = new Date(new Date().getTime() - (INTERVAL_DAY_CHANGE_ALIAS_USERNAME * 1000 * 3600 * 24))
         return a.get().lastPPUpdate() < nDaysAgo
@@ -121,7 +122,20 @@ export const updatePP = async (req: express.Request, res: express.Response) => {
     }
 
     try {
-        let a = await alias.quick().find({ address }) as AliasModel
+        if (!await compare(64) || !await compare(500)){
+            res.status(401)
+            res.json("image previously built doesn't match distant image")
+            return
+        }
+    } catch (e){
+        res.status(500)
+        res.json(e.toString())
+        return
+    }
+
+    let a: AliasModel
+    try {
+        a = await alias.quick().find({ address }) as AliasModel
         if (!a){
             res.status(404)
             res.send('alias not found, you need to create an username first')
@@ -132,6 +146,20 @@ export const updatePP = async (req: express.Request, res: express.Response) => {
             res.json(`you already updated your profil picture less than ${INTERVAL_DAY_CHANGE_ALIAS_USERNAME} days ago.`)
             return
         }
+    } catch (e) {
+        res.status(500)
+        res.json(e.toString())
+        return
+    }
+
+    try {
+        alias.newNode(undefined).mustValidateSchema({ username: a.get().username(), address, pp, pp500 })
+    } catch (err){
+        res.status(422).json({ error: err.toString() })
+        return
+    }
+
+    try {
         await a.setState(getRightState(a)).saveToDB()
         res.status(200)
         res.json(a.to().plain())
@@ -139,15 +167,12 @@ export const updatePP = async (req: express.Request, res: express.Response) => {
         res.status(500)
         res.json(err.toString())
     }
-    res.sendStatus(200)
 }
 
 
 export default (server: express.Express) => {
-    const { schemaValidator } = alias.expressTools().middleware()
 
-    server.post('/alias/username', 
-        schemaValidator,
+    server.post('/alias/username',
         checkSignatureOnBody,
         updateUsername
     )

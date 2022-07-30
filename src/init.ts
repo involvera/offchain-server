@@ -1,7 +1,4 @@
 import express from 'express'
-// import formData from 'express-form-data'
-import formidable from 'express-formidable';
-
 import morgan from 'morgan'
 import { config } from 'elzeard'
 import { cachedSocieties } from './models'
@@ -32,10 +29,10 @@ export const initServer = async () => {
 
     server.use(cors())
 
-    // stores state locally, don't use this in production
-    var store = new ExpressBrute.MemoryStore();
-    var bruteforce = new ExpressBrute(store);
-    server.use(bruteforce.prevent)
+    // // stores state locally, don't use this in production
+    // var store = new ExpressBrute.MemoryStore();
+    // var bruteforce = new ExpressBrute(store);
+    // server.use(bruteforce.prevent)
 
     config.setHistoryDirPath(ServerConfiguration.history_dir_path)
     config.setMySQLConfig(Object.assign({timezone: 'utc'}, ServerConfiguration.mysql))

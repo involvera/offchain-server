@@ -18,13 +18,16 @@ export class AliasModel extends Model {
 
     static schema = Joi.object({
         id: Joi.number().autoIncrement().primaryKey(),
-        address: Joi.string().regex(/^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,39}$/).max(39).unique().required().group(['author']),
+        origin_sid: Joi.number().foreignKey('societies', 'id').default(1).noPopulate().required(),
         created_at: Joi.date().default('now'),
+
+        last_username_update: Joi.date().default(() => new Date(0)),
+        last_pp_update: Joi.date().default(() => new Date(0)),
+
+        address: Joi.string().regex(/^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,39}$/).max(39).unique().required().group(['author']),
         pp: Joi.string().max(255).group(['author']),
         pp500: Joi.string().max(255),
-        last_pp_update: Joi.date().default(() => new Date(0)),
         username: Joi.string().max(16).lowercase().regex(/^[a-z0-9_]{3,16}$/).unique().group(['author']),
-        last_username_update: Joi.date().default(() => new Date(0))
     })
 
     constructor(initialState: any, options: any){
