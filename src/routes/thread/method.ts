@@ -1,17 +1,18 @@
 import { IKindLinkUnRaw } from 'community-coin-types'
 import express from 'express'
+import { Inv } from 'wallet-util'
 import { AliasModel, SocietyModel, thread, ThreadCollection, ThreadModel } from '../../models'
 import { getHeaderSignature } from '../../utils'
 
 export const GetThreadList = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const { offset, target_pkh } = req.headers
+    const targetPKH = typeof target_pkh == 'string' && target_pkh.length ? Inv.PubKH.fromHex(target_pkh) : null
 
-    const isTargeting = typeof target_pkh == 'string' && target_pkh.length
     try {
         const s = res.locals.society as SocietyModel
         let list: ThreadCollection;
-        if (isTargeting)
-            list = await thread.pullLastsBySIDAndTargetPKH(s.get().ID(), target_pkh as string, !offset ? 0 : parseInt(offset as string), 10)
+        if (targetPKH)
+            list = await thread.pullLastsBySIDAndTargetPKH(s.get().ID(), targetPKH, !offset ? 0 : parseInt(offset as string), 10)
         else {
             list = await thread.pullLastsBySID(s.get().ID(), !offset ? 0 : parseInt(offset as string), 10)
         }
@@ -35,7 +36,8 @@ export const GetUserThreadList = async (req: express.Request, res: express.Respo
 }
 
 export const GetThreadRepliesList = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    const { pubkh, offset } = req.params
+    const { offset } = req.params
+    const pubkh = Inv.PubKH.fromHex(req.params.pubkh)
 
     try {
         const s = res.locals.society as SocietyModel
@@ -48,7 +50,7 @@ export const GetThreadRepliesList = async (req: express.Request, res: express.Re
 }
 
 export const GetFullThread = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    const { pubkh } = req.params
+    const pubkh = Inv.PubKH.fromHex(req.params.pubkh)
 
     try {
         const s = res.locals.society as SocietyModel

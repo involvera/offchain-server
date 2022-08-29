@@ -4,6 +4,7 @@ import axios from 'axios'
 import { proposal } from './'
 import { ISocietyStats  } from 'community-coin-types'
 import {  ILocalSocietyStats } from '../static/interfaces'
+import { Inv } from 'wallet-util'
 
 
 export class SocietyModel extends Model {
@@ -56,7 +57,7 @@ export class SocietyModel extends Model {
                 })
                 if (res.status == 200){
                     let stats = res.data as ISocietyStats
-                    const p = await proposal.fetchByPubKH(this.get().ID(), stats.constitution.proposal.pubkh)
+                    const p = await proposal.fetchByPubKH(this.get().ID(), Inv.PubKH.fromHex(stats.constitution.proposal.pubkh))
                     const renderedStats = _.cloneDeep(stats as any) as ILocalSocietyStats
                     if (p){
                         await p.pullOnChainData(this)

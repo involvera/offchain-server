@@ -2,13 +2,12 @@ import axios from 'axios'
 import express from 'express'
 import { alias, AliasModel, SocietyModel } from '../models'
 import { CheckIfSocietyIDExistsByRouteParam } from './society'
-import { PubKeyHashFromAddress } from 'wallet-util'
 import { GenerateRandomUsername } from 'username-creator'
+import { Inv } from 'wallet-util'
 
-const fetchUserWalletInfo = async (society: SocietyModel, address: string) => {
-    const pkhHex = PubKeyHashFromAddress(address).toString('hex')
+const fetchUserWalletInfo = async (society: SocietyModel, addr: Inv.Address) => {
     try {
-        const response = await axios(society.get().currencyRouteAPI() + '/wallet/' + pkhHex, {
+        const response = await axios(society.get().currencyRouteAPI() + '/wallet/' + addr.toPKH().hex(), {
             method: 'GET',
             validateStatus: function (status) {
                 return status >= 200 && status <= 500
@@ -25,7 +24,7 @@ export default (server: express.Express) => {
     server.get('/user/:sid/:address', 
     CheckIfSocietyIDExistsByRouteParam,
     async (req: express.Request, res: express.Response) => {
-        const { address } = req.params
+        const address = new Inv.Address(req.params.address)
         const s = res.locals.society as SocietyModel
         
         try {

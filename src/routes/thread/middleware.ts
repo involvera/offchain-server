@@ -1,15 +1,15 @@
 import express from 'express'
 import axios from 'axios'
-import { ToPubKeyHash, GetAddressFromPubKeyHash } from 'wallet-util'
 import { thread, SocietyModel, embed, ThreadModel } from '../../models'
 import { IContentLink } from 'community-coin-types'
+import { Inv } from 'wallet-util'
 
 export const GetAndAssignLinkToThread = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    const { public_key } = req.body
+    const pubKey = Inv.PubKey.fromHex(req.body.public_key)
     
     try {
         const s = res.locals.society as SocietyModel
-        const public_key_hashed = ToPubKeyHash(Buffer.from(public_key, 'hex')).toString('hex')
+        const public_key_hashed = pubKey.hash().hex()
         const response = await axios(s.get().currencyRouteAPI() + `/thread/${public_key_hashed}`, {
             validateStatus: function (status) {
                 return status >= 200 && status <= 500
@@ -18,7 +18,7 @@ export const GetAndAssignLinkToThread = async (req: express.Request, res: expres
         if (response.status == 200){
             const json = response.data as IContentLink
             req.body = Object.assign(req.body, {
-                author: GetAddressFromPubKeyHash(Buffer.from(json.pubkh_origin, 'hex')),
+                author: Inv.PubKH.fromHex(json.pubkh_origin).toAddress().get(),
                 public_key_hashed,
                 lugh_height: json.link.lh,
                 content_link: JSON.stringify(json.link),
@@ -35,10 +35,10 @@ export const GetAndAssignLinkToThread = async (req: express.Request, res: expres
 }
 
 export const CheckIfThreadAlreadyRecorded = async (req: express.Request, res: express.Response, next: express.NextFunction) => { 
-    const { public_key } = req.body
+    const pubKey = Inv.PubKey.fromHex(req.body.public_key)
     const s = res.locals.society as SocietyModel
 
-    const p = await thread.fetchByPubKH(s.get().ID(), ToPubKeyHash(Buffer.from(public_key, 'hex')).toString('hex'))
+    const p = await thread.fetchByPubKH(s.get().ID(), pubKey.hash())
     if (p == null){
         next()
         return
@@ -48,8 +48,9 @@ export const CheckIfThreadAlreadyRecorded = async (req: express.Request, res: ex
 }
 
 export const BuildEmbed = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    const { public_key, sid } = req.body
-    const e = await embed.fetchByPKH(parseInt(sid), ToPubKeyHash(Buffer.from(public_key, 'hex')).toString('hex'), 'THREAD')
+    const { sid } = req.body
+    const pubKey = Inv.PubKey.fromHex(req.body.public_key)
+    const e = await embed.fetchByPKH(parseInt(sid), pubKey.hash(), 'THREAD')
     const t = new ThreadModel(req.body, {}).setState({ author: res.locals.alias }, true)
 
     if (e){

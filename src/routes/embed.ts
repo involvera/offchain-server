@@ -1,6 +1,6 @@
 import express from 'express'
 import _ from 'lodash'
-import { IsPubKHRightFormat } from 'wallet-util'
+import { Inv } from 'wallet-util'
 
 import { cachedSocieties, embed, EmbedModel } from '../models' 
 
@@ -25,7 +25,7 @@ export default (server: express.Express) => {
             if (splited.length == 2){
                 const s = cachedSocieties.findByPathName(splited[1])
                 if (s){
-                    if (IsPubKHRightFormat(Buffer.from(splited[0], 'hex')))
+                    if (Inv.PubKH.fromHex(splited[0]))
                         ts.push({pkh: splited[0], sid: s.get().ID()})
                     else {
                         const index = parseInt(splited[0])

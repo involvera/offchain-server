@@ -2,13 +2,14 @@ import _ from 'lodash'
 import { Joi, Collection, Model } from 'elzeard'
 import Knex from 'knex'
 import { ParseEmbedInText } from 'involvera-content-embedding';
-import { TPubKHContent } from 'wallet-script'
+import { TPubKHContent } from 'wallet-script/dist/src/content-code'
 
 import { ProposalModel } from './proposal';
 import { ThreadModel } from './thread';
 import { ArrayObjToDoubleArray, MixArraysToArrayObj } from '../utils/express';
 import society, { SocietyCollection, SocietyModel } from './society';
 import { cachedSocieties } from '.';
+import { Inv } from 'wallet-util';
 
 export class EmbedModel extends Model {
 
@@ -33,7 +34,7 @@ export class EmbedModel extends Model {
             type: (): TPubKHContent => this.state.type,
             sid: (): number => this.state.sid,
             index: (): number | -1 => this.state.index,
-            pubKH: (): string | null => this.state.public_key_hashed,
+            pubKH: (): Inv.PubKH | null => this.state.public_key_hashed ? new Inv.PubKH(this.state.public_key_hashed) : null,
             createdAt: (): Date => this.state.created_at
         }
     }
@@ -92,7 +93,7 @@ export class EmbedCollection extends Collection {
         return { thread, proposal }
     }
 
-    fetchByPKH = async (sid: number, public_key_hashed: string, type: TPubKHContent) => await this.quick().find({sid, public_key_hashed, type}) as EmbedModel
+    fetchByPKH = async (sid: number, pubkh: Inv.PubKH, type: TPubKHContent) => await this.quick().find({sid, public_key_hashed: pubkh.hex(), type}) as EmbedModel
     fetchByIndex = async (sid: number, index: number) => await this.quick().find({sid, index}) as EmbedModel
 
     pullByIndexesOrPKHs = async (sidIDX: number[], indexes: number[], sidPKH: number[], pkhs: string[]) => {

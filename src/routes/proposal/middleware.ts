@@ -1,14 +1,14 @@
 import express from 'express'
 import {proposal, SocietyModel, embed, ProposalModel } from '../../models'
-import { ToPubKeyHash, GetAddressFromPubKeyHash, VerifySignatureHex, ToArrayBufferFromB64 } from 'wallet-util'
-import { ScriptEngine } from 'wallet-script'
+import { Script } from 'wallet-script'
 import { fetchAndPickRightProposalContext } from './lib'
+import { Inv } from 'wallet-util'
 
 export const CheckContent = (req: express.Request, res: express.Response, next: express.NextFunction) => { 
     const { content, content_link } = req.body
 
     const length = (content as string).split('~~~_~~~_~~~_~~~').length
-    if (new ScriptEngine(ToArrayBufferFromB64(content_link.output.script)).proposalContentTypeString() == 'APPLICATION'){
+    if (Script.fromBase64(content_link.output.script).typeD2() === 'APPLICATION'){
         if (length == 4){
             next()
             return
@@ -25,8 +25,9 @@ export const CheckContent = (req: express.Request, res: express.Response, next: 
 
 export const CheckSignatureContent = (req: express.Request, res: express.Response, next: express.NextFunction) => { 
     const { signature, public_key, content } = req.body
+    const sig = new Inv.Signature({signature, public_key})
 
-    if (VerifySignatureHex({signature_hex: signature as string, public_key_hex: public_key as string}, Buffer.from(content))){
+    if (sig.verify(content)){
         next()
     } else {
         res.status(401).json({error: `Wrong signature on content.`})         
@@ -34,10 +35,10 @@ export const CheckSignatureContent = (req: express.Request, res: express.Respons
 }
 
 export const CheckIfProposalAlreadyRecorded = async (req: express.Request, res: express.Response, next: express.NextFunction) => { 
-    const { public_key } = req.body
+    const pubKey = Inv.PubKey.fromHex(req.body.public_key)
     const s = res.locals.society as SocietyModel
 
-    const p = await proposal.fetchByPubKH(s.get().ID(), ToPubKeyHash(Buffer.from(public_key, 'hex')).toString('hex'))
+    const p = await proposal.fetchByPubKH(s.get().ID(), pubKey.hash())
     if (p == null){
         next()
         return
@@ -47,19 +48,18 @@ export const CheckIfProposalAlreadyRecorded = async (req: express.Request, res: 
 }
 
 export const GetAndAssignLinkToProposal = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    const { public_key } = req.body
+    const pubKey = Inv.PubKey.fromHex(req.body.public_key)
     
     try {
         const s = res.locals.society as SocietyModel
-        const public_key_hashed = ToPubKeyHash(Buffer.from(public_key, 'hex')).toString('hex')
-        const json = await ProposalModel.fetchOnChainData(s, public_key_hashed)
+        const json = await ProposalModel.fetchOnChainData(s, pubKey.hash())
         if (!!json && typeof json !== 'string'){
-            const context = await fetchAndPickRightProposalContext(s, public_key_hashed, json.link.output.script)
+            const context = await fetchAndPickRightProposalContext(s, pubKey.hash(), Script.fromBase64(json.link.output.script))
             req.body = Object.assign(req.body, {
-                author: GetAddressFromPubKeyHash(Buffer.from(json.pubkh_origin, 'hex')),
+                author: Inv.PubKH.fromHex(json.pubkh_origin).toAddress().get(),
                 vote: json.vote,
                 content_link: json.link,
-                public_key_hashed,
+                public_key_hashed: pubKey.hash().hex(),
                 index: json.index,
                 context
             })

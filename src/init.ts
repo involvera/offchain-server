@@ -4,7 +4,6 @@ import { config } from 'elzeard'
 import { cachedSocieties } from './models'
 import cors from 'cors'
 import { loadServerConfiguration, ServerConfiguration} from './static/config'
-import ExpressBrute from 'express-brute'
 
 export const initCachedData = async () => {
   await cachedSocieties.pullAll(); 

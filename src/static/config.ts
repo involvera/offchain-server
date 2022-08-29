@@ -1,5 +1,5 @@
 import fs from 'fs'
-import { Sha256 } from 'wallet-util'
+import { Lib, Inv } from 'wallet-util'
 import { IServerConfigJSON } from './interfaces'
 import { randomBytes } from 'crypto'
 
@@ -50,7 +50,7 @@ const loadServerConfiguration = async () => {
     }
 
     if (!ServerConfiguration.admin_key) {
-        ServerConfiguration.admin_key = Sha256(randomBytes(32)).toString('hex')
+        ServerConfiguration.admin_key = new Inv.InvBuffer(Lib.Hash.Sha256(randomBytes(32))).hex()
         !ServerConfiguration.production && console.log(`No admin_key found in config.json.\nFor this session the admin key is: "${ServerConfiguration.admin_key}"\n`)
     }
 }

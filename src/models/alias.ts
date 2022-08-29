@@ -1,4 +1,5 @@
 import { Joi, Collection, Model } from 'elzeard'
+import { Inv } from 'wallet-util'
 
 interface IAuthor {
     pp: string | null
@@ -8,11 +9,11 @@ interface IAuthor {
 
 export class AliasModel extends Model {
 
-    static defaultAliasWithAuthorGroup = (address: string): IAuthor => {
+    static defaultAliasWithAuthorGroup = (addr: Inv.Address): IAuthor => {
         return {
             pp: null,
             username: '',
-            address
+            address: addr.get()
         }
     }
 
@@ -40,7 +41,7 @@ export class AliasModel extends Model {
             createdAt: (): Date => this.state.created_at,
             originSID: (): number => this.state.origin_sid,
 
-            address: (): string => this.state.address,
+            address: (): Inv.Address => new Inv.Address(this.state.address),
             ppURI: (): string | null => this.state.pp,
             pp500URI: (): string | null => this.state.pp500,
             username: (): string => this.state.username,
@@ -56,7 +57,7 @@ export class AliasCollection extends Collection {
         super(initialState, [AliasModel, AliasCollection], options)
     }
 
-    findByAddress = async (address: string) => await this.quick().find({address}) as AliasModel
+    findByAddress = async (address: Inv.Address) => await this.quick().find({address: address.get()}) as AliasModel
     findByUsername = async (username: string) => await this.quick().find({username}) as AliasModel
     pullByAddresses = async (addresses: string[]) => await this.copy().sql().pull().whereIn('address', addresses).run() as AliasCollection
 }

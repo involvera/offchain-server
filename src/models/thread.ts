@@ -3,15 +3,14 @@ import {  IHeaderSignature, IKindLinkUnRaw, IThreadReward } from 'community-coin
 import { BuildThreadPreviewString, IPreview, IProposalPreview, IThreadPreview } from 'involvera-content-embedding'
 import { AliasModel } from './alias'
 import _ from 'lodash'
-import { ScriptEngine } from 'wallet-script'
-import { ToArrayBufferFromB64 } from 'wallet-util'
+import { Script } from 'wallet-script'
 import { IPostEmbed, ICountReply } from '../static/interfaces'
 import { EmbedModel } from './embed'
 import axios from 'axios'
-
 import { SocietyModel } from './society'
 import { ProposalModel } from './proposal'
 import { thread, embed, proposal, cachedSocieties } from '.'
+import { Inv } from 'wallet-util'
 
 export class ThreadModel extends Model {
 
@@ -70,7 +69,7 @@ export class ThreadModel extends Model {
     toEmbedData = (target: ProposalModel | ThreadModel | null): IPostEmbed => {
         const s = cachedSocieties.findByID(this.get().sid())
         return {
-            public_key_hashed: this.get().pubKH(),
+            public_key_hashed: this.get().pubKH().hex(),
             index: -1,
             type: "THREAD",
             content: this.get().preview(target).zipped().embed_code,
@@ -79,7 +78,7 @@ export class ThreadModel extends Model {
         }
     }
 
-    getRewards = async (society: SocietyModel, headerSig: IHeaderSignature | void) => ThreadModel.FetchRewards(this.get().pubKH(), society, headerSig)
+    getRewards = async (society: SocietyModel, headerSig: IHeaderSignature | void) => ThreadModel.FetchRewards(this.get().pubKH().hex(), society, headerSig)
 
     get = () => {
 
@@ -95,7 +94,7 @@ export class ThreadModel extends Model {
 
                 const s = cachedSocieties.findByID(this.get().sid())
                 return {
-                    pkh: this.get().pubKH(),
+                    pkh: this.get().pubKH().hex(),
                     author: this.get().author().to().filterGroup('author').plain(),
                     created_at: this.get().createdAt(),
                     sid: this.get().sid(),
@@ -116,7 +115,7 @@ export class ThreadModel extends Model {
             title: (): string => this.state.title,
             content: (): string => this.state.content,
             author: (): AliasModel => this.state.author,
-            pubKH: (): string => this.state.public_key_hashed,
+            pubKH: () => Inv.PubKH.fromHex(this.state.public_key_hashed),
             id: (): number => this.state.id,
             sid: (): number => this.state.sid,
             createdAt: (): Date => this.state.created_at,
@@ -125,12 +124,12 @@ export class ThreadModel extends Model {
                     return JSON.parse(this.state.content_link)
                 return this.state.content_link
             },
-            targetPKH: (): string => this.state.target_pkh,
+            targetPKH: () => this.state.target_pkh ? Inv.PubKH.fromHex(this.state.target_pkh) : null,
             target: async (): Promise<ThreadModel | ProposalModel | null> => {
                 const link = this.get().contentLink()
-                const script = new ScriptEngine(ToArrayBufferFromB64(link.output.script))
-                if (script.is().rethreadScript()){
-                    const contentPKH = script.parse().targetPKHFromContentScript().toString('hex')
+                const script = Script.fromBase64(link.output.script)
+                if (script.is().rethreadD2Script()){
+                    const contentPKH = script.parse().targetPKHFromContentScript()
                     const p = await proposal.fetchByPubKH(this.get().sid(), contentPKH)
                     if (p){
                         await p.pullOnChainData(cachedSocieties.local().find({ id: this.get().sid() }) as SocietyModel)
@@ -142,7 +141,7 @@ export class ThreadModel extends Model {
                 }
                 return null
             },
-            countReply: async () => this.sql().count().where({sid: this.get().sid(), target_pkh: this.get().pubKH()})
+            countReply: async () => this.sql().count().where({sid: this.get().sid(), target_pkh: this.get().pubKH().hex()})
         }
     }
 
@@ -182,12 +181,12 @@ export class ThreadCollection extends Collection {
     get = () => {
 
         const rewardList = (society: SocietyModel, headerSig: IHeaderSignature | void) => {
-            const listPKHStr = this.local().map((t: ThreadModel) => t.get().pubKH()).join(',')
+            const listPKHStr = this.local().map((t: ThreadModel) => t.get().pubKH().hex()).join(',')
             return ThreadModel.FetchRewards(listPKHStr, society, headerSig)
         }
 
         const countReplyList = async (society: SocietyModel) => {
-            const res = await this.sql().knex().select('target_pkh').table(this.sql().table().name()).where({sid: society.get().ID()}).whereIn('target_pkh', this.local().map((t: ThreadModel) => t.get().pubKH())).groupBy('target_pkh').count('* as count')
+            const res = await this.sql().knex().select('target_pkh').table(this.sql().table().name()).where({sid: society.get().ID()}).whereIn('target_pkh', this.local().map((t: ThreadModel) => t.get().pubKH().hex())).groupBy('target_pkh').count('* as count')
             const ret: ICountReply[] = []
             for (let o of res)
                 ret.push({target_pkh: o.target_pkh, count: o.count})
@@ -200,22 +199,22 @@ export class ThreadCollection extends Collection {
 
     }
     
-    fetchByPubKH = async (sid: number, public_key_hashed: string) => await this.quick().find({ sid, public_key_hashed }) as ThreadModel
+    fetchByPubKH = async (sid: number, pubkh: Inv.PubKH) => await this.quick().find({ sid, public_key_hashed: pubkh.hex() }) as ThreadModel
     
-    pullLastsByAuthorAddress = async (authorAddress: string, sid: number, offset: number, nPerPage: number) => {
-        return await this.ctx().sql().pull().where({sid, author: authorAddress}).orderBy('id', 'desc').offset(offset).limit(nPerPage).run() as ThreadCollection
+    pullLastsByAuthorAddress = async (authorAddress: Inv.Address, sid: number, offset: number, nPerPage: number) => {
+        return await this.ctx().sql().pull().where({sid, author: authorAddress.get()}).orderBy('id', 'desc').offset(offset).limit(nPerPage).run() as ThreadCollection
     }
 
     pullLastsBySID = async (sid: number, offset: number, nPerPage: number) => {
         return await this.ctx().sql().pull().where({sid}).orderBy('id', 'desc').offset(offset).limit(nPerPage).run() as ThreadCollection    
     }
     
-    pullLastsBySIDAndTargetPKH = async (sid: number, target_pkh: string, offset: number, nPerPage: number) => {
-        return await this.ctx().sql().pull().where({sid, target_pkh}).orderBy('id', 'desc').offset(offset).limit(nPerPage).run() as ThreadCollection
+    pullLastsBySIDAndTargetPKH = async (sid: number, targetPKH: Inv.PubKH, offset: number, nPerPage: number) => {
+        return await this.ctx().sql().pull().where({sid, target_pkh: targetPKH.hex()}).orderBy('id', 'desc').offset(offset).limit(nPerPage).run() as ThreadCollection
     }
 
-    pullBySIDAndTargetPKHSortedAsc = async (sid: number, target_pkh: string, offset: number, nPerPage: number) => {
-        return await this.ctx().sql().pull().where({sid, target_pkh}).orderBy('id', 'asc').offset(offset).limit(nPerPage).run() as ThreadCollection    
+    pullBySIDAndTargetPKHSortedAsc = async (sid: number, targetPKH: Inv.PubKH, offset: number, nPerPage: number) => {
+        return await this.ctx().sql().pull().where({sid, target_pkh: targetPKH.hex()}).orderBy('id', 'asc').offset(offset).limit(nPerPage).run() as ThreadCollection    
     }
 
     //thread full format without targets.
@@ -228,10 +227,10 @@ export class ThreadCollection extends Collection {
         return this.local().map((t: ThreadModel, index: number) => {
             t.prepareJSONRendering()
             const json = t.to().filterGroup('view').plain()
-            const reward = _.find(p[0], {thread_pkh: t.get().pubKH()})
+            const reward = _.find(p[0], {thread_pkh: t.get().pubKH().hex()})
             if (!reward)
                 throw new Error("Unable to fetch thread's rewards")
-            const replyCount = _.find(p[1], {target_pkh: t.get().pubKH()})            
+            const replyCount = _.find(p[1], {target_pkh: t.get().pubKH().hex()})            
             return {
                 ...json, 
                 reward,
@@ -243,7 +242,7 @@ export class ThreadCollection extends Collection {
     renderPreviewList = async (society: SocietyModel, headerSig: IHeaderSignature | void) => {
         const p = await Promise.all([
             this.get().rewardList(society, headerSig),
-            embed.pullBySidsAndPKHs(this.local().map((t: ThreadModel) => t.get().sid()), this.local().map((t: ThreadModel) => t.get().pubKH())),
+            embed.pullBySidsAndPKHs(this.local().map((t: ThreadModel) => t.get().sid()), this.local().map((t: ThreadModel) => t.get().pubKH().hex())),
             this.get().countReplyList(society)
         ])
         
@@ -253,15 +252,15 @@ export class ThreadCollection extends Collection {
         listEmbeds.local().removeBy({type: 'PROPOSAL'})
 
         return this.local().map((t: ThreadModel) => {
-            const reward = _.find(listRewards, {thread_pkh: t.get().pubKH()})
+            const reward = _.find(listRewards, {thread_pkh: t.get().pubKH().hex()})
             if (!reward)
                 throw new Error("Unable to fetch thread's rewards")
 
-            const embed = listEmbeds.local().find({ public_key_hashed: t.get().pubKH() }) as EmbedModel
+            const embed = listEmbeds.local().find({ public_key_hashed: t.get().pubKH().hex() }) as EmbedModel
             if (!embed)
                 throw new Error("Unable to fetch thread's embed")
 
-            const replyCount = _.find(listCountReplies, { target_pkh: t.get().pubKH() })
+            const replyCount = _.find(listCountReplies, { target_pkh: t.get().pubKH().hex() })
 
             return {
                 reward, 

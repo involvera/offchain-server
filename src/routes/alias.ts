@@ -1,5 +1,5 @@
 import express from 'express'
-import { ToPubKeyHash, GetAddressFromPubKeyHash, VerifySignatureHex, Sha256 } from 'wallet-util'
+import { Inv } from 'wallet-util'
 import { alias, AliasModel } from '../models' 
 import { INTERVAL_SEC_CHANGE_ALIAS } from '../static'
 import { downloadDistantImage, downloadLocalImage } from '../utils'
@@ -17,7 +17,7 @@ export const CheckIfAliasExistByBody = async (req: express.Request, res: express
 }
 
 export const CheckIfAliasExistByURLParam = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    const { address } = req.params
+    const address = new Inv.Address(req.params.address)
 
     const a = await alias.findByAddress(address)
     if (!a){
@@ -30,18 +30,13 @@ export const CheckIfAliasExistByURLParam = async (req: express.Request, res: exp
 
 export const checkSignatureOnBody = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const { signature, public_key } = req.headers
-
-    if (VerifySignatureHex({signature_hex: signature as string, public_key_hex: public_key as string}, Buffer.from(JSON.stringify(req.body)))){
-        next()
-    } else {
-        res.status(401).json({error: `Wrong signature on content.`})
-    }
+    const sig = new Inv.Signature({ signature, public_key } as any)
+    sig.verify(JSON.stringify(req.body)) ? next() : res.status(401).json({error: `Wrong signature on content.`})
 }
 
 const updateUsername = async (req: express.Request, res: express.Response) => {
-    const { public_key } = req.headers
-    const pkh = ToPubKeyHash(Buffer.from(public_key as string, 'hex'))
-    const address = GetAddressFromPubKeyHash(pkh)
+    const pubKey = Inv.PubKey.fromHex(req.headers.public_key as string)
+    const address = pubKey.hash().toAddress().get()
     const { username } = req.body
     
     try {
@@ -93,9 +88,8 @@ const updateUsername = async (req: express.Request, res: express.Response) => {
 }
 
 export const updatePP = async (req: express.Request, res: express.Response) => {
-    const { public_key } = req.headers
-    const pkh = ToPubKeyHash(Buffer.from(public_key as string, 'hex'))
-    const address = GetAddressFromPubKeyHash(pkh)
+    const pubKey = Inv.PubKey.fromHex(req.headers.public_key as string)
+    const address = pubKey.hash().toAddress().get()
     const { pp, pp500, asset_name } = req.body
 
     const compare = async (size: 64 | 500) => {

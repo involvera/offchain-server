@@ -3,7 +3,7 @@ import {
     ISocietyStats, ICostProposal, ICostHistory,
     IThreadReward, IKindLinkUnRaw
 } from 'community-coin-types'
-import { TPubKHContent } from 'wallet-script'
+import { TPubKHContent } from 'wallet-script/dist/src/content-code'
 import { ProposalModel } from '../models'
 
 export interface IHeaderSignature {

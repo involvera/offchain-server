@@ -1,7 +1,7 @@
 const smartcrop = require('smartcrop-sharp')
 import sharp from 'sharp'
 import crypto from 'crypto'
-import { Sha256 } from 'wallet-util'
+import { Inv, Lib } from 'wallet-util'
 import path from 'path'
 import fs from 'fs'
 import axios from 'axios'
@@ -64,7 +64,7 @@ export const build500PixelPP = (src: string, dest: string) => {
     })
 }
 
-const randomFileNameJPG = () => Sha256(crypto.randomBytes(64)).toString('hex') + '.jpg'
+const randomFileNameJPG = () => new Inv.InvBuffer(Lib.Hash.Sha256(crypto.randomBytes(64))).hex() + '.jpg'
 
 export const buildAllPP = async (src: string) => {
     mkdir(getPX64FolderPath())

@@ -1,11 +1,11 @@
-import { ScriptEngine } from "wallet-script";
-import { ToArrayBufferFromB64 } from "wallet-util";
+import { Script } from "wallet-script";
+import { Inv } from "wallet-util";
 import { ProposalModel, SocietyModel } from "../../models";
 
-export const fetchAndPickRightProposalContext = async (society: SocietyModel, pubkhHex: string, script: string[]) => {
-    const proposalType = new ScriptEngine(ToArrayBufferFromB64(script)).proposalContentTypeString()
+export const fetchAndPickRightProposalContext = async (society: SocietyModel, pubKH: Inv.PubKH, script: Script) => {
+    const proposalType = script.typeD2()
     if (proposalType != 'APPLICATION'){
-        const context = await ProposalModel.fetchProposalContext(society, pubkhHex)
+        const context = await ProposalModel.fetchProposalContext(society, pubKH)
         if (!!context && typeof context !== 'string'){
             const { constitution, costs } = context
             switch (proposalType){

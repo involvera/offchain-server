@@ -1,16 +1,17 @@
 import express from 'express'
 import axios from 'axios'
-import { GetAddressFromPubKeyHash, ToPubKeyHash,  } from 'wallet-util'
 import { Constant } from 'wallet-script'
 
 import { SocietyModel, alias, AliasModel } from '../models'
 import { CheckIfSocietyIDExistsByRouteParam } from './society'
+import { Inv } from 'wallet-util'
 
 export default (server: express.Express) => {
 
 
     server.get('/puts/list/:sid', CheckIfSocietyIDExistsByRouteParam, async (req: express.Request, res: express.Response, next: express.NextFunction) => {
         const { signature, pubkey, filter, offset } = req.headers
+        
         const s = res.locals.society as SocietyModel
 
         try {
@@ -26,15 +27,15 @@ export default (server: express.Express) => {
                 }
             })
             if (resp.status == 200) {
-                const userPKH = ToPubKeyHash(Buffer.from(pubkey as string, 'hex')).toString('hex')
+                const userPKH = Inv.PubKey.fromHex(pubkey as string).hash().hex()
                 const list = resp.data as any[]
                 const addressToFetch: string[] = []
 
                 for (let p of list){
                     const { sender, recipient } = p.pubkh
                     if (p.kind == 0){
-                        !!sender && sender != userPKH && addressToFetch.push(GetAddressFromPubKeyHash(Buffer.from(sender, 'hex')))
-                        !!recipient && recipient != userPKH && recipient != Constant.PUBKEY_H_BURNER && addressToFetch.push(GetAddressFromPubKeyHash(Buffer.from(recipient, 'hex')))
+                        !!sender && sender != userPKH && addressToFetch.push(Inv.PubKH.fromHex(sender).toAddress().get())
+                        !!recipient && recipient != userPKH && recipient != Constant.PUBKEY_H_BURNER && addressToFetch.push(Inv.PubKH.fromHex(recipient).toAddress().get())
                     }
                 }
                 const aliases = await alias.pullByAddresses(addressToFetch)
@@ -43,9 +44,8 @@ export default (server: express.Express) => {
                     if (list[i].kind == 0){
                         const pkhToFind = sender === userPKH ? recipient : sender
                         if (pkhToFind){
-                            const addrToFind = GetAddressFromPubKeyHash(Buffer.from(pkhToFind, 'hex'))
                             const a = aliases.local().find((a: AliasModel) => {
-                                return a.get().address() == addrToFind
+                                return a.get().address().get() === Inv.PubKH.fromHex(pkhToFind).toAddress().get()
                             })
                             if (a){
                                 list[i].alias = a.to().filterGroup('author').plain()

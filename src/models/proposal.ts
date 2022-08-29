@@ -3,21 +3,22 @@ import { Joi, Collection, Model } from 'elzeard'
 import { IContentLink, IKindLinkUnRaw, IVoteSummary, IProposalContext } from 'community-coin-types'
 import { BuildProposalPreviewString, IPreview, IProposalPreview} from 'involvera-content-embedding'
 import { AliasModel } from './alias'
-import { ScriptEngine } from 'wallet-script'
-import { ToArrayBufferFromB64 } from 'wallet-util'
+import { Script } from 'wallet-script'
+import { TProposalType } from 'wallet-script/dist/src/content-code'
 import { EmbedModel } from './embed'
 import { SocietyModel } from './society'
 import axios from 'axios'
 import { IHeaderSignature, IPreviewProposal, IPostEmbed } from '../static/interfaces'
 import { cachedSocieties, embed } from '.'
+import { Inv } from 'wallet-util'
 
 export class ProposalModel extends Model {
 
     private _onChainData: IContentLink | null = null
 
-    static fetchOnChainData = async (society: SocietyModel, pubkhHex: string, headerSig: IHeaderSignature | void): Promise<string | IContentLink> => {
+    static fetchOnChainData = async (society: SocietyModel, pubKH: Inv.PubKH, headerSig: IHeaderSignature | void): Promise<string | IContentLink> => {
         try {
-            const response = await axios.get(society.get().currencyRouteAPI() + '/proposal/' + pubkhHex, {
+            const response = await axios.get(society.get().currencyRouteAPI() + '/proposal/' + pubKH.hex(), {
                 headers: headerSig as any || {},
                 validateStatus: function (status) {
                     return status >= 200 && status <= 500
@@ -29,9 +30,9 @@ export class ProposalModel extends Model {
         }
     }
 
-    static fetchProposalContext = async(society: SocietyModel, pubkhHex: string): Promise<string | IProposalContext> => {
+    static fetchProposalContext = async(society: SocietyModel, pubKH: Inv.PubKH): Promise<string | IProposalContext> => {
         try {
-            const response = await axios.get(society.get().currencyRouteAPI() + '/proposal/' + pubkhHex + '/context', {
+            const response = await axios.get(society.get().currencyRouteAPI() + '/proposal/' + pubKH.hex() + '/context', {
                 validateStatus: function (status) {
                     return status >= 200 && status <= 500
                 }
@@ -75,7 +76,7 @@ export class ProposalModel extends Model {
     toEmbedData = (): IPostEmbed => {
         const s = cachedSocieties.findByID(this.get().sid())
         return {
-            public_key_hashed: this.get().pubKH(),
+            public_key_hashed: this.get().pubKH().hex(),
             index: this.get().index(),
             type: 'PROPOSAL',
             content: this.get().preview().zipped().embed_code,
@@ -105,7 +106,7 @@ export class ProposalModel extends Model {
                 return {
                     index: this.get().index(),
                     author: this.get().author().to().filterGroup('author').plain(),
-                    layer: new ScriptEngine(ToArrayBufferFromB64(link.output.script)).proposalContentTypeString(),
+                    layer: Script.fromBase64(link.output.script).typeD2() as TProposalType,
                     created_at: this.get().createdAt(),
                     vote: this.get().vote(),
                     title: this.get().title(),
@@ -127,7 +128,7 @@ export class ProposalModel extends Model {
             index: (): number => this.state.index,
             content: (): string => this.state.content,
             author: (): AliasModel => this.state.author,
-            pubKH: (): string => this.state.public_key_hashed,
+            pubKH: (): Inv.PubKH => new Inv.PubKH(this.state.public_key_hashed),
             createdAt: (): Date => this.state.created_at,
             contentLink: (): IKindLinkUnRaw => this._onChainData == null ? undefined : this._onChainData.link,
             vote: (): IVoteSummary => this._onChainData == null ? undefined : this._onChainData.vote,
@@ -183,7 +184,7 @@ export class ProposalCollection extends Collection {
     sortByIndexDesc = () => this.local().orderBy('index', 'desc') as ProposalCollection 
 
     fetchByIndex = async (sid: number, index: number) => await this.quick().find({sid, index}) as ProposalModel
-    fetchByPubKH = async (sid: number, public_key_hashed: string) => await this.quick().find({public_key_hashed, sid}) as ProposalModel
+    fetchByPubKH = async (sid: number, pubkh: Inv.PubKH) => await this.quick().find({public_key_hashed: pubkh.hex(), sid}) as ProposalModel
 
     pullLastsBySID = async (sid: number, offset: number) => await this.copy().sql().pull().where({sid}).orderBy('index', 'desc').offset(offset).limit(5).run() as ProposalCollection
 
@@ -209,7 +210,7 @@ export class ProposalCollection extends Collection {
 
     pullOnChainData = async (society: SocietyModel, headerSig: IHeaderSignature | void) => {
         try {
-            const list = this.local().map((p: ProposalModel) => p.get().pubKH()).join(',')
+            const list = this.local().map((p: ProposalModel) => p.get().pubKH().hex()).join(',')
             const res = await ProposalCollection.fetchOnChainData(society, list, headerSig)
             if (typeof res == 'string')
                 throw new Error(res)
