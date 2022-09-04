@@ -43,7 +43,7 @@ export const CheckIfThreadAlreadyRecorded = async (req: express.Request, res: ex
         next()
         return
     }
-    res.status(401).json({error: `Thread is already recorded.`})
+    res.status(401).json({error: `thread is already recorded`})
     return
 }
 
@@ -74,12 +74,12 @@ export const CheckContentOrTitlePresence = (req: express.Request, res: express.R
     const { title, content } = req.body
     if (!title){
         if (content.length < 20){
-            res.status(406).json(`Thread's content must contain 20 characters minimum.`)
+            res.status(406).json(`thread's content must contain 20 characters minimum`)
             return
         }
     } else if (!content){
         if (title.length < 20){
-            res.status(406).json(`Thread's title must contain 20 characters minimum.`)
+            res.status(406).json(`thread's title must contain 20 characters minimum`)
             return
         }
     }

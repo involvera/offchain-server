@@ -6,7 +6,7 @@ import { CheckIfSocietyIDExistsByRouteParam } from './society'
 
 export const CheckIsDevelopment = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (ServerConfiguration.production){
-        res.status(401).json({error: `Not development environment`})
+        res.status(401).json({error: `not development environment`})
         return
     }
     next()
@@ -16,7 +16,7 @@ export const CheckAdminKey = async (req: express.Request, res: express.Response,
     const { admin_key } = req.headers
 
     if (admin_key != ServerConfiguration.admin_key){
-        res.status(401).json({error: `You can't perform this action.`})
+        res.status(401).json({error: `you cannot perform this action`})
         return
     } 
     next()

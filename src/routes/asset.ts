@@ -9,7 +9,7 @@ export default (server: express.Express) => {
         windowMs: 60 * 60 * 1000 * 24,
         max: 10, 
         message:
-            'Too many profil profile picture created on the last 24 hours, please try again after a day',
+            'too many profil profile picture created on the last 24 hours, please try again after a day',
     })
 
     server.post('/asset/pp', buildPPLimiter, async (req: express.Request, res: express.Response) => {

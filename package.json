@@ -7,7 +7,7 @@
   "license": "MIT",
   "scripts": {
     "test": "mocha --timeout 10000 -r ts-node/register tests/index.ts",
-    "start": "tsc && node ./dist/index.js",
+    "start": "rm -rf dist && tsc && node ./dist/index.js",
     "setconfig": "source ./bash/init.sh"
   },
   "dependencies": {
@@ -24,17 +24,17 @@
     "sharp": "^0.30.7",
     "smartcrop-sharp": "^2.0.6",
     "username-creator": "^1.0.1",
-    "wallet-script": "^1.1.2",
-    "wallet-util": "^1.1.5"
+    "wallet-script": "^1.1.7",
+    "wallet-util": "^1.2.1"
   },
   "devDependencies": {
-    "@types/express-brute": "^1.0.1",
-    "@types/sharp": "^0.30.4",
     "@types/cors": "^2.8.12",
     "@types/express": "^4.17.12",
+    "@types/express-brute": "^1.0.1",
     "@types/express-rate-limit": "^5.1.2",
     "@types/lodash": "^4.14.170",
     "@types/morgan": "^1.9.2",
+    "@types/sharp": "^0.30.4",
     "tslint": "^6.1.3"
   }
 }

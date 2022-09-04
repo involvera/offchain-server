@@ -5,11 +5,11 @@ import { INTERVAL_SEC_CHANGE_ALIAS } from '../static'
 import { downloadDistantImage, downloadLocalImage } from '../utils'
 
 export const CheckIfAliasExistByBody = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    const { author } = req.body
+    const address = new Inv.Address(req.body.author)
 
-    const a = await alias.findByAddress(author)
+    const a = await alias.findByAddress(address)
     if (!a){
-        res.status(404).json({error: "You need to create an alias on your address before adding content."})
+        res.status(404).json({error: "you need to create an alias on your address before adding content"})
         return
     }
     res.locals.alias = a

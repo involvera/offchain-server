@@ -19,7 +19,7 @@ export const CheckContent = (req: express.Request, res: express.Response, next: 
             return
         }
     }
-    res.status(406).json({error: "Wrong length of content."})
+    res.status(406).json({error: "wrong length of content"})
     return
 }
 
@@ -30,7 +30,7 @@ export const CheckSignatureContent = (req: express.Request, res: express.Respons
     if (sig.verify(content)){
         next()
     } else {
-        res.status(401).json({error: `Wrong signature on content.`})         
+        res.status(401).json({error: `wrong signature on content`})         
     }
 }
 
@@ -43,7 +43,7 @@ export const CheckIfProposalAlreadyRecorded = async (req: express.Request, res: 
         next()
         return
     }
-    res.status(401).json({error: `Proposal is already recorded.`})
+    res.status(401).json({error: `proposal is already recorded`})
     return
 }
 
