@@ -128,7 +128,7 @@ export class ProposalModel extends Model {
             index: (): number => this.state.index,
             content: (): string => this.state.content,
             author: (): AliasModel => this.state.author,
-            pubKH: (): Inv.PubKH => new Inv.PubKH(this.state.public_key_hashed),
+            pubKH: (): Inv.PubKH => Inv.PubKH.fromHex(this.state.public_key_hashed),
             createdAt: (): Date => this.state.created_at,
             contentLink: (): IKindLinkUnRaw => this._onChainData == null ? undefined : this._onChainData.link,
             vote: (): IVoteSummary => this._onChainData == null ? undefined : this._onChainData.vote,

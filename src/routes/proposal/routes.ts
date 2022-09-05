@@ -5,6 +5,7 @@ import { CheckIfProposalAlreadyRecorded, GetAndAssignLinkToProposal, CheckSignat
 import { GetProposalList, GetProposal, PostProposal } from './methods'
 import { CheckIfSocietyIDExistsByBodyParam, CheckIfSocietyIDExistsByRouteParam } from '../society'
 import { CheckIfAliasExistByBody } from '../alias'
+import { Inv } from 'wallet-util'
 
 export default (server: express.Express) => { 
 
@@ -12,7 +13,7 @@ export default (server: express.Express) => {
 
     server.post('/proposal', 
         bodyAssignator((req: express.Request) => {
-            return {  index: 0, author: '1111111111111111111111111111111111', public_key_hashed: '0000000000000000000000000000000000000000', context: '' }
+            return {  index: 0, author: '1111111111111111111111111111111111', public_key_hashed: Inv.PubKH.random().hex(), context: '' }
         }),
         CheckSignatureContent,
         CheckIfSocietyIDExistsByBodyParam,
