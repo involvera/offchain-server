@@ -11,7 +11,7 @@ export const initCachedData = async () => {
 
 export const initServer = async () => {
     await loadServerConfiguration()
-
+    
     const server = express()
     server.use(express.json({
       limit: '4MB'

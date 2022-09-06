@@ -2,12 +2,13 @@ import express from 'express'
 import { buildAllPP, createTemporaryFile, getPX500FolderPath, getPX64FolderPath } from '../utils/assets'
 import rateLimit from 'express-rate-limit'
 import fs from 'fs'
+import { ServerConfiguration} from '../static/config'
 
 export default (server: express.Express) => {
 
     const buildPPLimiter = rateLimit({
         windowMs: 60 * 60 * 1000 * 24,
-        max: 10, 
+        max: ServerConfiguration.production ? 10 : 9999999999, 
         message:
             'too many profil profile picture created on the last 24 hours, please try again after a day',
     })
