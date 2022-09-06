@@ -1,6 +1,7 @@
 import { Joi, Collection, Model } from 'elzeard'
 import {  IHeaderSignature, IKindLinkUnRaw, IThreadReward } from 'community-coin-types'
-import { BuildThreadPreviewString, IPreview, IProposalPreview, IThreadPreview } from 'involvera-content-embedding'
+import { IPreview, IProposalPreview, IThreadPreview } from 'involvera-content-embedding'
+import { BuildThreadPreviewString } from '../utils/embeds' 
 import { AliasModel } from './alias'
 import _ from 'lodash'
 import { Script } from 'wallet-script'
