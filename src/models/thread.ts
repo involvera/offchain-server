@@ -129,7 +129,7 @@ export class ThreadModel extends Model {
             target: async (): Promise<ThreadModel | ProposalModel | null> => {
                 const link = this.get().contentLink()
                 const script = Script.fromBase64(link.output.script)
-                if (script.is().rethreadD2Script()){
+                if (script.is().RethreadOnlyScript()){
                     const contentPKH = script.parse().targetPKHFromContentScript()
                     const p = await proposal.fetchByPubKH(this.get().sid(), contentPKH)
                     if (p){

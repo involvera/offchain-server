@@ -26,9 +26,8 @@
     "sharp": "^0.30.7",
     "smartcrop-sharp": "^2.0.6",
     "username-creator": "^1.0.1",
-    "wallet-script": "^1.1.8",
-    "wallet-util": "^1.2.1",
-    "zxcvbn": "^4.4.2"
+    "wallet-script": "^1.2.0",
+    "wallet-util": "^1.2.1"
   },
   "devDependencies": {
     "@types/chai": "^4.3.3",
