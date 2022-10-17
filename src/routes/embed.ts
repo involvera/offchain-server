@@ -25,9 +25,10 @@ export default (server: express.Express) => {
             if (splited.length == 2){
                 const s = cachedSocieties.findByPathName(splited[1])
                 if (s){
-                    if (Inv.PubKH.fromHex(splited[0]))
-                        ts.push({pkh: splited[0], sid: s.get().ID()})
-                    else {
+                    try {
+                        const pkh = Inv.PubKH.fromHex(splited[0])
+                        ts.push({pkh: pkh.hex(), sid: s.get().ID()})
+                    } catch {
                         const index = parseInt(splited[0])
                         index != NaN && ps.push({index, sid: s.get().ID()})
                     }

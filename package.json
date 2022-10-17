@@ -11,6 +11,7 @@
     "setconfig": "source ./bash/init.sh"
   },
   "dependencies": {
+    "@types/zxcvbn": "^4.4.1",
     "axios": "^0.26.0",
     "community-coin-types": "^1.2.1",
     "cors": "^2.8.5",
@@ -26,7 +27,8 @@
     "smartcrop-sharp": "^2.0.6",
     "username-creator": "^1.0.1",
     "wallet-script": "^1.1.8",
-    "wallet-util": "^1.2.1"
+    "wallet-util": "^1.2.1",
+    "zxcvbn": "^4.4.2"
   },
   "devDependencies": {
     "@types/chai": "^4.3.3",
