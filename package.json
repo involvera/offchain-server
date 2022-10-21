@@ -8,16 +8,23 @@
   "scripts": {
     "test": "mocha --timeout 10000 -r ts-node/register tests/index.ts",
     "start": "rm -rf dist && tsc && node ./dist/index.js",
-    "setconfig": "source ./bash/init.sh"
+    "dev": "nodemon --ignore history/ src/index.ts",
+    "setconfig": "source ./bash/init.sh",
+    "docker-compose": "sh ./bash/docker-compose.sh",
+    "dockerfile": "sh ./bash/dockerfile.sh",
+    "docker-rm-volumes": "sh ./bash/rm-volumes.sh",
+    "docker-stop-db": "sh ./bash/shut-db.sh",
+    "docker-stop-server": "sh ./bash/shut-server.sh",
+    "docker-stop": "sh ./bash/shut-db.sh && sh ./bash/shut-server.sh",
+    "docker-reset": "sh ./bash/docker-reset.sh",
+    "docker": "sh ./bash/print.sh"
   },
   "dependencies": {
-    "@types/zxcvbn": "^4.4.1",
     "axios": "^0.26.0",
     "community-coin-types": "^1.2.1",
     "cors": "^2.8.5",
-    "elzeard": "^1.3.6",
+    "elzeard": "^1.3.7",
     "express": "^4.17.2",
-    "express-brute": "^1.0.1",
     "express-rate-limit": "^5.2.6",
     "involvera-content-embedding": "^1.1.9",
     "lodash": "^4.17.21",
@@ -33,7 +40,6 @@
     "@types/chai": "^4.3.3",
     "@types/cors": "^2.8.12",
     "@types/express": "^4.17.12",
-    "@types/express-brute": "^1.0.1",
     "@types/express-rate-limit": "^5.1.2",
     "@types/lodash": "^4.14.170",
     "@types/mocha": "^9.1.1",
@@ -41,6 +47,7 @@
     "@types/sharp": "^0.30.4",
     "chai": "^4.3.6",
     "mocha": "^10.0.0",
+    "nodemon": "^2.0.20",
     "ts-node": "~10.7.0",
     "tslint": "^6.1.3",
     "typescript": "~4.6.4"
