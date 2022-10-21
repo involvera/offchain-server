@@ -27,7 +27,11 @@ export default (server: express.Express) => {
         CheckAdminKey,
         CheckIsDevelopment,
         schemaValidator,
-        postHandler(['name', 'path_name', 'currency_route_api', 'currency_symbol', 'description', 'domain'])
+        postHandler(['name', 'path_name', 'currency_route_api', 'currency_symbol', 'description', 'domain'], {
+            callback: (status, m) => {
+                status == 201 && cachedSocieties.local().push(m.to().plain())
+            }
+        })
     )
 
     server.put('/society/:sid', 

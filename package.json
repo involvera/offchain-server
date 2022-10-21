@@ -17,7 +17,9 @@
     "docker-stop-server": "sh ./bash/shut-server.sh",
     "docker-stop": "sh ./bash/shut-db.sh && sh ./bash/shut-server.sh",
     "docker-reset": "sh ./bash/docker-reset.sh",
-    "docker": "sh ./bash/print.sh"
+    "docker": "sh ./bash/print.sh",
+    "help2": "sh ./bash/help.sh",
+    "build-involvera-society": "sh ./bash/build-involvera.sh"
   },
   "dependencies": {
     "axios": "^0.26.0",
