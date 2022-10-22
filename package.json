@@ -12,15 +12,16 @@
     "setconfig": "source ./bash/init.sh",
     "docker-compose": "sh ./bash/docker-compose.sh",
     "dockerfile": "sh ./bash/dockerfile.sh",
-    "docker-rm-volumes": "sh ./bash/rm-volumes.sh",
-    "docker-stop-db": "sh ./bash/shut-db.sh",
-    "docker-stop-server": "sh ./bash/shut-server.sh",
-    "docker-stop": "sh ./bash/shut-db.sh && sh ./bash/shut-server.sh",
+    "docker-rm-volumes": "sh ./bash/docker-rm-volumes.sh",
+    "docker-stop-db": "sh ./bash/docker-shut-db.sh",
+    "docker-stop-server": "sh ./bash/docker-shut-server.sh",
+    "docker-stop": "sh ./bash/shut-db.sh && sh ./bash/docker-shut-server.sh",
     "docker-reset": "sh ./bash/docker-reset.sh",
+    "build-involvera-society": "sh ./bash/build-involvera.sh",
     "docker": "sh ./bash/print.sh",
     "help2": "sh ./bash/help.sh",
-    "cmd": "sh ./bash/help.sh",
-    "build-involvera-society": "sh ./bash/build-involvera.sh"
+    "print": "sh ./bash/help.sh",
+    "cmd": "sh ./bash/help.sh"
   },
   "dependencies": {
     "axios": "^0.26.0",

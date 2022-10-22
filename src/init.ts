@@ -36,6 +36,17 @@ export const initServer = async () => {
     config.setHistoryDirPath(ServerConfiguration.history_dir_path)
     config.setMySQLConfig(Object.assign({timezone: 'utc'}, ServerConfiguration.mysql))
 
+    /*
+      This is important to make sure mariadb is correctly 
+      launched when using docker. 
+      
+      i) You can remove this line if the tables are already created.
+
+      i2) increase the timeout if you encounter problems 
+          with table creation
+    */
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
     await config.done()
     try {
       await initCachedData()

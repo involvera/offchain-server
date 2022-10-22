@@ -74,7 +74,7 @@ CMD ["yarn", "'$CMD_PARAM'"]
 ' > $DOCKERFILE_PATH
 
 echo "Dockerfile created with exposed port: $PORT."
-echo "You have 5 seconds to break the program and change the parameter 'port' in 'config.json' before building the image."
+echo "You have 5 seconds before building the image."
 i=5;
 while [ $i -gt 0 ]
 do

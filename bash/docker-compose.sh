@@ -15,7 +15,7 @@ DIR_NAME=$(dirname $SCRIPT_DIR);
 
 JSON_CONFIG_PATH=$DIR_NAME"/config.json" 
 DOCKERCOMPOSE_PATH=$DIR_NAME"/docker-compose.yml" 
-SQL_SCRIPT_PATH=$DIR_NAME"/init-script.sql" 
+SQL_SCRIPT_PATH=$DIR_NAME"/.init-script.sql" 
 
 ############## VARIABLES INIT ###########
 
@@ -26,6 +26,7 @@ DB_PASSWD=$(jq ".mysql.password" $JSON_CONFIG_PATH | sed 's/\"//g')
 PORT=$(jq ".port" $JSON_CONFIG_PATH)
 HISTORY_PATH=$(jq ".history_dir_path" $JSON_CONFIG_PATH | sed 's/\"//g')
 ASSETS_PATH=$(jq ".assets_dir_path" $JSON_CONFIG_PATH | sed 's/\"//g')
+IS_PROD=$(jq ".production" $JSON_CONFIG_PATH | sed 's/\"//g') 
 
 if [ "$DB_HOST" != "maria" ];
 then
@@ -68,6 +69,17 @@ then
     PORT=3020
 fi
 
+if [ "$IS_PROD" = "" ]; 
+then
+    echo "You need to fill the parameter 'production' in 'config.json' in order to run this command."
+    exit
+fi
+
+CMD_PARAM="dev"
+if [ "$IS_PROD" = "true" ];
+then
+    CMD_PARAM="start"
+fi
 
 echo 'CREATE DATABASE IF NOT EXISTS '$DB_NAME';' > $SQL_SCRIPT_PATH
 
@@ -85,7 +97,7 @@ services:
       - "3306:3306"
     volumes:
       - mariadata:/var/lib/mysql
-      - ./init-script.sql:/docker-entrypoint-initdb.d/init-script.sql
+      - '$SQL_SCRIPT_PATH':/docker-entrypoint-initdb.d/init-script.sql
 
   server:
     image: offchain:latest

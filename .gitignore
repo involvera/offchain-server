@@ -5,4 +5,4 @@ history
 config.json
 Dockerfile
 docker-compose.yml
-init-script.sql
+.init-script.sql
