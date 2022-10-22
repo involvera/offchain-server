@@ -18,25 +18,12 @@ JSON_CONFIG_PATH=$DIR_NAME"/config.json"
 ############## VARIABLES INIT ###########
 
 SERVER_PORT=$(jq ".port" $JSON_CONFIG_PATH)
-PORT=$(jq ".crypto.port" $JSON_CONFIG_PATH)
-DOMAIN=$(jq ".crypto.domain" $JSON_CONFIG_PATH | sed 's/\"//g')
 ADMIN_KEY=$(jq ".admin_key" $JSON_CONFIG_PATH | sed 's/\"//g') 
 IS_PROD=$(jq ".production" $JSON_CONFIG_PATH | sed 's/\"//g') 
-
-if [ $PORT = null ];
-then
-    PORT=8080
-fi
 
 if [ $SERVER_PORT = null ];
 then
     SERVER_PORT=3020
-fi
-
-if [ "$DOMAIN" = "" ];
-then
-    echo "You need to fill the parameter 'crypto.domain' in 'config.json' in order to run this command."
-    exit
 fi
 
 if [ "$ADMIN_KEY" = "" ];
@@ -48,6 +35,24 @@ fi
 if [ "$IS_PROD" != "false" ]; 
 then
     echo "You need to set the parameter 'production' to 'false' in 'config.json' in order to run this command."
+    exit
+fi
+
+echo "Enter cryptocurrency server's domain: (Information: enter \`host.docker.internal\` if on local docker container)"
+read DOMAIN
+
+if [ "$DOMAIN" = "" ];
+then
+    echo "you need to enter a domain"
+    exit
+fi
+
+echo "Enter cryptocurrency server's port:"
+read PORT
+
+if [ $PORT = "" ];
+then
+    echo "you need to enter a port"
     exit
 fi
 

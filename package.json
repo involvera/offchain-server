@@ -19,6 +19,7 @@
     "docker-reset": "sh ./bash/docker-reset.sh",
     "docker": "sh ./bash/print.sh",
     "help2": "sh ./bash/help.sh",
+    "cmd": "sh ./bash/help.sh",
     "build-involvera-society": "sh ./bash/build-involvera.sh"
   },
   "dependencies": {
