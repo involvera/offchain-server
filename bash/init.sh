@@ -13,7 +13,7 @@ DIR_NAME=$(dirname $SCRIPT_DIR);
 JSON_CONFIG_PATH=$DIR_NAME"/config.json" 
 
 SQL_HOST="localhost"
-echo "Are you planning running the server on docker?"
+echo "Are you going to run the server on docker?"
 read -p "Press Y or N to confirm:" -n 1 -r
 if [[ $REPLY =~ ^[Yy]$ ]]; 
 then
