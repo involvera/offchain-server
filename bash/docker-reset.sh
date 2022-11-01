@@ -26,6 +26,5 @@ then
 fi
 
 cd $DIR_NAME
-docker-compose down 
-yarn docker-rm-volumes
+docker-compose down --volumes
 cd - >> /var/tmp/null

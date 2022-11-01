@@ -1,12 +1,31 @@
 import express from 'express'
 import morgan from 'morgan'
 import { config } from 'elzeard'
-import { cachedSocieties } from './models'
+import { cachedSocieties, embed, EmbedCollection, EmbedModel, thread, proposal } from './models'
 import cors from 'cors'
 import { loadServerConfiguration, ServerConfiguration} from './static/config'
 
 export const initCachedData = async () => {
   await cachedSocieties.pullAll(); 
+}
+
+const updateEmbedIfRequired = async () => {
+  const list = await embed.quick().pull({author: null}).run() as EmbedCollection
+  let count = 0
+  for (let i = 0; i < list.local().count(); i++){
+    const e = list.local().nodeAt(i) as EmbedModel
+    if (e.get().index() < 1 && !e.state.author){
+      const t = await thread.fetchByPubKH(e.get().sid(), e.get().pubKH())
+      await e.setState({ author: t.get().author().get().address().get() }).saveToDB()
+      count++
+    }
+    if (e.get().index() > 0 && !e.state.author) {
+      const p = await proposal.fetchByIndex(e.get().sid(), e.get().index())
+      await e.setState({ author: p.get().author().get().address().get() }).saveToDB()
+      count++
+    }
+  }
+  console.log(count, 'embeds updated')
 }
 
 export const initServer = async () => {
@@ -50,6 +69,7 @@ export const initServer = async () => {
     await config.done()
     try {
       await initCachedData()
+      await updateEmbedIfRequired()
     } catch (e){
       console.log(e)
       process.exit(0)

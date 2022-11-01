@@ -82,7 +82,8 @@ export class ProposalModel extends Model {
             type: 'PROPOSAL',
             content: this.get().preview().zipped().embed_code,
             sid: this.get().sid(),
-            spname: s.get().pathName()
+            spname: s.get().pathName(),
+            author: this.get().author().get().address().get()
         }
     }
     

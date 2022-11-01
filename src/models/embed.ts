@@ -1,11 +1,12 @@
 import _ from 'lodash'
 import { Joi, Collection, Model } from 'elzeard'
 import Knex from 'knex'
-import { ParseEmbedInText } from 'involvera-content-embedding';
+import { ParseEmbedInText, PREVIEW_SEPATOR } from 'involvera-content-embedding';
 import { TPubKHContent } from 'wallet-script/dist/src/content-code'
 
 import { ProposalModel } from './proposal';
 import { ThreadModel } from './thread';
+import { AliasModel } from './alias'
 import { ArrayObjToDoubleArray, MixArraysToArrayObj } from '../utils/express';
 import society, { SocietyCollection, SocietyModel } from './society';
 import { cachedSocieties } from '.';
@@ -15,11 +16,13 @@ export class EmbedModel extends Model {
 
     static schema = Joi.object({
         id: Joi.number().autoIncrement().primaryKey(),
+        sid: Joi.number().foreignKey('societies', 'id').noPopulate().required(),
+        author: Joi.string().foreignKey('aliases', 'address').noPopulate().required(),
+
         created_at: Joi.date().default('now'),
         public_key_hashed: Joi.string().min(0).max(40).hex(),
-        index: Joi.number().max(2_000_000_000), 
+        index: Joi.number().max(2_000_000_000),
         type: Joi.string().allow('PROPOSAL', 'THREAD').required(),
-        sid: Joi.number().foreignKey('societies', 'id').noPopulate().required(),
         content: Joi.string().max(1000).group(['preview'])
     })
 
@@ -34,7 +37,8 @@ export class EmbedModel extends Model {
             type: (): TPubKHContent => this.state.type,
             sid: (): number => this.state.sid,
             index: (): number | -1 => this.state.index,
-            pubKH: (): Inv.PubKH | null => this.state.public_key_hashed ? new Inv.PubKH(this.state.public_key_hashed) : null,
+            pubKH: (): Inv.PubKH | null => this.state.public_key_hashed ? Inv.PubKH.fromHex(this.state.public_key_hashed) : null,
+            author: (): Inv.Address => new Inv.Address(this.state.author),
             createdAt: (): Date => this.state.created_at
         }
     }
@@ -131,7 +135,22 @@ export class EmbedCollection extends Collection {
         return await this.copy().sql().pull().whereIn(SET_SID_PKH, ArrayObjToDoubleArray(arr, SET_SID_PKH)).run() as EmbedCollection        
     }
 
-    // pullByIDs = async (ids: number[]) => await this.copy().quick().pull('id', ids).run() as EmbedCollection
+    updateAllEmbedWithAuthorChange = async (author: AliasModel) => {
+        const list = await this.ctx().sql().pull().where({author: author.get().address().get() }).run()
+        
+        const authString = JSON.stringify({address: author.get().address().get(), pp: author.get().ppURI(), username: author.get().username()})
+        for (let i = 0; i < list.local().count(); i++){
+            const m = list.local().nodeAt(i) as EmbedModel 
+            const splited = m.get().content().split(PREVIEW_SEPATOR)
+            if (m.get().index() > 0){
+                splited[2] = authString
+            } else {
+                splited[1] = authString
+            }
+            m.setState({content: splited.join(PREVIEW_SEPATOR)})          
+        }
+        return await list.local().saveToDB()
+    }
 }
 
 

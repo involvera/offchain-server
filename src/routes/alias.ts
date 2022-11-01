@@ -1,6 +1,6 @@
 import express from 'express'
 import { Inv } from 'wallet-util'
-import { alias, AliasModel } from '../models' 
+import { alias, AliasModel, embed } from '../models' 
 import { INTERVAL_SEC_CHANGE_ALIAS } from '../static'
 import { downloadDistantImage, downloadLocalImage } from '../utils'
 
@@ -80,6 +80,7 @@ const updateUsername = async (req: express.Request, res: express.Response) => {
             }
             await a.setState(getRightState(a)).saveToDB()
             res.status(200)
+            embed.updateAllEmbedWithAuthorChange(a)
         }
         res.json(a.to().plain())
     } catch (err){
@@ -147,6 +148,7 @@ export const updatePP = async (req: express.Request, res: express.Response) => {
     try {
         await a.setState(getRightState(a)).saveToDB()
         res.status(200).json(a.to().plain())
+        embed.updateAllEmbedWithAuthorChange(a)
     } catch (err){
         res.status(500).json(err.toString())
     }
