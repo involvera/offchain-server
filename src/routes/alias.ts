@@ -80,7 +80,7 @@ const updateUsername = async (req: express.Request, res: express.Response) => {
             }
             await a.setState(getRightState(a)).saveToDB()
             res.status(200)
-            embed.updateAllEmbedWithAuthorChange(a)
+            embed.updateOnAliasChange(a)
         }
         res.json(a.to().plain())
     } catch (err){
@@ -148,7 +148,7 @@ export const updatePP = async (req: express.Request, res: express.Response) => {
     try {
         await a.setState(getRightState(a)).saveToDB()
         res.status(200).json(a.to().plain())
-        embed.updateAllEmbedWithAuthorChange(a)
+        embed.updateOnAliasChange(a)
     } catch (err){
         res.status(500).json(err.toString())
     }

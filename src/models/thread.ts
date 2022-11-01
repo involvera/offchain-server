@@ -75,8 +75,7 @@ export class ThreadModel extends Model {
             type: "THREAD",
             content: this.get().preview(target).zipped().embed_code,
             sid: this.get().sid(),
-            spname: s.get().pathName(),
-            author: this.get().author().get().address().get()
+            spname: s.get().pathName()
         }
     }
 

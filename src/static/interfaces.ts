@@ -31,7 +31,6 @@ export interface IPostEmbed {
     content: string
     sid: number
     spname: string
-    author: string
 }
 
 export interface IConstitutionData {

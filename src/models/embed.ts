@@ -1,7 +1,7 @@
-import _ from 'lodash'
+import _, { split } from 'lodash'
 import { Joi, Collection, Model } from 'elzeard'
 import Knex from 'knex'
-import { ParseEmbedInText, PREVIEW_SEPATOR } from 'involvera-content-embedding';
+import { IAlias, IThreadPreview, ParseEmbedInText, PREVIEW_SEPATOR } from 'involvera-content-embedding';
 import { TPubKHContent } from 'wallet-script/dist/src/content-code'
 
 import { ProposalModel } from './proposal';
@@ -11,13 +11,13 @@ import { ArrayObjToDoubleArray, MixArraysToArrayObj } from '../utils/express';
 import society, { SocietyCollection, SocietyModel } from './society';
 import { cachedSocieties } from '.';
 import { Inv } from 'wallet-util';
+import { IPostEmbed } from '../static/interfaces';
 
 export class EmbedModel extends Model {
 
     static schema = Joi.object({
         id: Joi.number().autoIncrement().primaryKey(),
         sid: Joi.number().foreignKey('societies', 'id').noPopulate().required(),
-        author: Joi.string().foreignKey('aliases', 'address').noPopulate().required(),
 
         created_at: Joi.date().default('now'),
         public_key_hashed: Joi.string().min(0).max(40).hex(),
@@ -29,6 +29,8 @@ export class EmbedModel extends Model {
     constructor(initialState: any, options: any){
         super(initialState, EmbedModel, options)
     }
+
+    isProposal = () => this.get().index() > 0
 
     get = () => {
         return {
@@ -135,21 +137,47 @@ export class EmbedCollection extends Collection {
         return await this.copy().sql().pull().whereIn(SET_SID_PKH, ArrayObjToDoubleArray(arr, SET_SID_PKH)).run() as EmbedCollection        
     }
 
-    updateAllEmbedWithAuthorChange = async (author: AliasModel) => {
-        const list = await this.ctx().sql().pull().where({author: author.get().address().get() }).run()
-        
-        const authString = JSON.stringify({address: author.get().address().get(), pp: author.get().ppURI(), username: author.get().username()})
-        for (let i = 0; i < list.local().count(); i++){
-            const m = list.local().nodeAt(i) as EmbedModel 
-            const splited = m.get().content().split(PREVIEW_SEPATOR)
-            if (m.get().index() > 0){
-                splited[2] = authString
-            } else {
-                splited[1] = authString
-            }
-            m.setState({content: splited.join(PREVIEW_SEPATOR)})          
+    updateOnAliasChange = async (newAlias: AliasModel) => {
+        const addr = newAlias.get().address().get()
+      
+        const newAuthorObj: IAlias = {
+          address: addr,
+          pp: newAlias.get().ppURI(),
+          username: newAlias.get().username()
         }
-        return await list.local().saveToDB()
+      
+        const threadRegex = (addr: string) => `^[a-z0-9]{40}(-_={"address":"${addr}","pp":)`
+        const rethreadRegex = (addr: string) => `^[a-z0-9]{40}(-_=)({.*?\})(-_=)[0-9]{10}(-_=)({"pkh":"[a-z0-9]{40}","author":{"address":"${addr}","pp":)`
+      
+        const res = await this.ctx().sql().pull().custom((q: Knex.QueryBuilder) => {
+          return q.whereRaw(`content REGEXP '${threadRegex(addr)}'`).or.whereRaw(`content REGEXP '${threadRegex(addr)}'`)
+        }) as EmbedCollection
+      
+        res.local().forEach((e: EmbedModel) => {
+          var rethread = new RegExp(rethreadRegex(addr));
+          var thread = new RegExp(threadRegex(addr));
+      
+          const splited = e.get().content().split(PREVIEW_SEPATOR)
+          if (e.isProposal()){
+      
+          } else {
+              
+            if (e.get().content().match(thread)){
+              splited[1] = JSON.stringify(newAuthorObj)
+            }
+            
+            if (e.get().content().match(rethread)){
+              const target = JSON.parse(splited[3]) as IThreadPreview
+              if (target && target.author){
+                target.author = newAuthorObj
+              }
+              splited[3] = JSON.stringify(target)
+            }
+          }
+          e.setState({content: splited.join(PREVIEW_SEPATOR)})
+        })
+      
+        await res.local().saveToDB()
     }
 }
 
