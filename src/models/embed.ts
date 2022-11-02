@@ -148,18 +148,26 @@ export class EmbedCollection extends Collection {
       
         const threadRegex = (addr: string) => `^[a-z0-9]{40}(-_={"address":"${addr}","pp":)`
         const rethreadRegex = (addr: string) => `^[a-z0-9]{40}(-_=)({.*?\})(-_=)[0-9]{10}(-_=)({"pkh":"[a-z0-9]{40}","author":{"address":"${addr}","pp":)`
-      
+        const proposalRegex = (addr: string) => `^([0-9]+)(-_=)([A-Z]{5,20})(-_=)({"address":"${addr}","pp":)`
+
         const res = await this.ctx().sql().pull().custom((q: Knex.QueryBuilder) => {
-          return q.whereRaw(`content REGEXP '${threadRegex(addr)}'`).or.whereRaw(`content REGEXP '${threadRegex(addr)}'`)
+          return q.whereRaw(`content REGEXP '${threadRegex(addr)}'`).
+            or.whereRaw(`content REGEXP '${threadRegex(addr)}'`).
+            or.whereRaw(`content REGEXP '${proposalRegex(addr)}'`)
         }) as EmbedCollection
       
         res.local().forEach((e: EmbedModel) => {
           var rethread = new RegExp(rethreadRegex(addr));
           var thread = new RegExp(threadRegex(addr));
+          var proposal = new RegExp(proposalRegex(addr));
       
           const splited = e.get().content().split(PREVIEW_SEPATOR)
           if (e.isProposal()){
       
+            if (e.get().content().match(proposal)){
+                splited[2] = JSON.stringify(newAuthorObj)
+            }
+
           } else {
               
             if (e.get().content().match(thread)){
