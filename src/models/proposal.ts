@@ -202,16 +202,17 @@ export class ProposalCollection extends Collection {
         ])
         const listEmbeds = p[0]
 
-        return this.local().map((p: ProposalModel): OFFCHAIN.IPreviewProposal1 => {
+        return this.local().map((p: ProposalModel) => {
             const { user_vote, vote } = p.getOnChainData()
             const embed = listEmbeds.local().find({ index: p.get().index() }) as EmbedModel
             if (!embed)
                 throw new Error("Unable to fetch thread's embed")
-            return {
+            const ret: OFFCHAIN.IPreviewProposal1 = {
                 preview_code: embed.get().content(),
                 user_vote,
                 vote,
             }
+            return ret
         }) as OFFCHAIN.IPreviewProposal1[]
     }
 

@@ -116,6 +116,23 @@ export class ThreadModel extends Model {
             return { unzipped, zipped }
         }
 
+        const target = async (): Promise<ThreadModel | ProposalModel | null> => {
+            const link = this.get().contentLink()
+            const script = Script.fromBase64(link.output.script)
+            if (script.is().RethreadOnlyScript()){
+                const contentPKH = script.parse().targetPKHFromContentScript()
+                const p = await proposal.fetchByPubKH(this.get().sid(), contentPKH)
+                if (p){
+                    await p.pullOnChainData(cachedSocieties.local().find({ id: this.get().sid() }) as SocietyModel)
+                    return p
+                }
+                const t = await thread.fetchByPubKH(this.get().sid(), contentPKH)
+                if (t)
+                    return t
+            }
+            return null
+        }
+
         return {
             preview,
             title: (): string => this.state.title,
@@ -131,22 +148,7 @@ export class ThreadModel extends Model {
                 return this.state.content_link
             },
             targetPKH: () => this.state.target_pkh ? Inv.PubKH.fromHex(this.state.target_pkh) : null,
-            target: async (): Promise<ThreadModel | ProposalModel | null> => {
-                const link = this.get().contentLink()
-                const script = Script.fromBase64(link.output.script)
-                if (script.is().RethreadOnlyScript()){
-                    const contentPKH = script.parse().targetPKHFromContentScript()
-                    const p = await proposal.fetchByPubKH(this.get().sid(), contentPKH)
-                    if (p){
-                        await p.pullOnChainData(cachedSocieties.local().find({ id: this.get().sid() }) as SocietyModel)
-                        return p
-                    }
-                    const t = await thread.fetchByPubKH(this.get().sid(), contentPKH)
-                    if (t)
-                        return t
-                }
-                return null
-            },
+            target: target,
             countReply: async () => this.sql().count().where({sid: this.get().sid(), target_pkh: this.get().pubKH().hex()})
         }
     }
