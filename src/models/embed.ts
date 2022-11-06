@@ -1,7 +1,8 @@
 import _, { split } from 'lodash'
 import { Joi, Collection, Model } from 'elzeard'
 import Knex from 'knex'
-import { IAlias, IThreadPreview, ParseEmbedInText, PREVIEW_SEPATOR } from 'involvera-content-embedding';
+import { OFFCHAIN } from 'community-coin-types'
+import { ParseEmbedInText, PREVIEW_SEPATOR } from 'involvera-content-embedding';
 import { TPubKHContent } from 'wallet-script/dist/src/content-code'
 
 import { ProposalModel } from './proposal';
@@ -11,7 +12,6 @@ import { ArrayObjToDoubleArray, MixArraysToArrayObj } from '../utils/express';
 import society, { SocietyCollection, SocietyModel } from './society';
 import { cachedSocieties } from '.';
 import { Inv } from 'wallet-util';
-import { IPostEmbed } from '../static/interfaces';
 
 export class EmbedModel extends Model {
 
@@ -140,7 +140,7 @@ export class EmbedCollection extends Collection {
     updateOnAliasChange = async (newAlias: AliasModel) => {
         const addr = newAlias.get().address().get()
       
-        const newAuthorObj: IAlias = {
+        const newAuthorObj: OFFCHAIN.IAuthor = {
           address: addr,
           pp: newAlias.get().ppURI(),
           username: newAlias.get().username()
@@ -175,7 +175,7 @@ export class EmbedCollection extends Collection {
             }
             
             if (e.get().content().match(rethread)){
-              const target = JSON.parse(splited[3]) as IThreadPreview
+              const target = JSON.parse(splited[3]) as OFFCHAIN.IPreviewThread2
               if (target && target.author){
                 target.author = newAuthorObj
               }

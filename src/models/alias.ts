@@ -1,15 +1,10 @@
 import { Joi, Collection, Model } from 'elzeard'
 import { Inv } from 'wallet-util'
-
-interface IAuthor {
-    pp: string | null
-    username: string
-    address: string
-}
+import { OFFCHAIN } from 'community-coin-types'
 
 export class AliasModel extends Model {
 
-    static defaultAliasWithAuthorGroup = (addr: Inv.Address): IAuthor => {
+    static defaultAliasWithAuthorGroup = (addr: Inv.Address): OFFCHAIN.IAuthor => {
         return {
             pp: null,
             username: '',

@@ -1,4 +1,4 @@
-import { IKindLinkUnRaw } from 'community-coin-types'
+import { ONCHAIN } from 'community-coin-types'
 import express from 'express'
 import { Inv } from 'wallet-util'
 import { AliasModel, SocietyModel, thread, ThreadCollection, ThreadModel } from '../../models'
@@ -98,7 +98,7 @@ export const PostThread = async  (req: express.Request, res: express.Response, n
 
     try {
         const s = res.locals.society as SocietyModel
-        data.target_pkh = (JSON.parse(data.content_link) as IKindLinkUnRaw).target_content || null
+        data.target_pkh = (JSON.parse(data.content_link) as ONCHAIN.IKindLinkUnRaw).target_content || null
         const m = await thread.quick().create(data) as ThreadModel
         res.status(201).json(await m.renderViewJSON(s))
     } catch (e){

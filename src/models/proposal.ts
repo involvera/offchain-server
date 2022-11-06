@@ -1,7 +1,6 @@
 import _ from 'lodash'
 import { Joi, Collection, Model } from 'elzeard'
-import { IContentLink, IKindLinkUnRaw, IVoteSummary, IProposalContext } from 'community-coin-types'
-import { IPreview, IProposalPreview} from 'involvera-content-embedding'
+import { OFFCHAIN, ONCHAIN  } from 'community-coin-types'
 import { BuildProposalPreviewString } from '../utils/embeds'
 import { AliasModel } from './alias'
 import { Script } from 'wallet-script'
@@ -9,15 +8,15 @@ import { TProposalType } from 'wallet-script/dist/src/content-code'
 import { EmbedModel } from './embed'
 import { SocietyModel } from './society'
 import axios from 'axios'
-import { IHeaderSignature, IPreviewProposal, IPostEmbed } from '../static/interfaces'
+import { IPostEmbed } from '../static/interfaces'
 import { cachedSocieties, embed } from '.'
 import { Inv } from 'wallet-util'
 
 export class ProposalModel extends Model {
 
-    private _onChainData: IContentLink | null = null
+    private _onChainData: ONCHAIN.IProposalLink | null = null
 
-    static fetchOnChainData = async (society: SocietyModel, pubKH: Inv.PubKH, headerSig: IHeaderSignature | void): Promise<string | IContentLink> => {
+    static fetchOnChainData = async (society: SocietyModel, pubKH: Inv.PubKH, headerSig: ONCHAIN.IHeaderSignature | void) => {
         try {
             const response = await axios.get(society.get().currencyRouteAPI() + '/proposal/' + pubKH.hex(), {
                 headers: headerSig as any || {},
@@ -25,20 +24,20 @@ export class ProposalModel extends Model {
                     return status >= 200 && status <= 500
                 }
             })
-            return response.status === 200 ? response.data as IContentLink : response.data as string
+            return response.status === 200 ? response.data as ONCHAIN.IProposalLink : response.data as string
         } catch (e){
             throw new Error(e)
         }
     }
 
-    static fetchProposalContext = async(society: SocietyModel, pubKH: Inv.PubKH): Promise<string | IProposalContext> => {
+    static fetchProposalContext = async(society: SocietyModel, pubKH: Inv.PubKH) => {
         try {
             const response = await axios.get(society.get().currencyRouteAPI() + '/proposal/' + pubKH.hex() + '/context', {
                 validateStatus: function (status) {
                     return status >= 200 && status <= 500
                 }
             })
-            return response.status === 200 ? response.data as IProposalContext : response.data as string
+            return response.status === 200 ? response.data as ONCHAIN.IProposalContext : response.data as string
         } catch (e){
             throw new Error(e)
         }
@@ -61,18 +60,18 @@ export class ProposalModel extends Model {
         context: Joi.string().max(15_000).group(['view', 'full'])
     })
 
-    setOnChainData = (json: IContentLink) => {
+    setOnChainData = (json: ONCHAIN.IProposalLink) => {
         this._onChainData = {
             link: json.link,
             index: json.index,
             vote: json.vote,
             pubkh_origin: json.pubkh_origin,
             rewards: null,
-            user_vote: json.user_vote || null as any
+            user_vote: json.user_vote || null
         }
     }
 
-    getOnChainData = (): IContentLink | null => this._onChainData
+    getOnChainData = (): ONCHAIN.IProposalLink | null => this._onChainData
 
     toEmbedData = (): IPostEmbed => {
         const s = cachedSocieties.findByID(this.get().sid())
@@ -86,7 +85,7 @@ export class ProposalModel extends Model {
         }
     }
     
-    pullOnChainData = async (society: SocietyModel, headerSig: IHeaderSignature | void) => {
+    pullOnChainData = async (society: SocietyModel, headerSig: ONCHAIN.IHeaderSignature | void) => {
         try {
             const json = await ProposalModel.fetchOnChainData(society, this.get().pubKH(), headerSig)
             !!json && typeof json !== 'string' && this.setOnChainData(json)
@@ -101,7 +100,7 @@ export class ProposalModel extends Model {
 
         const preview = () => {
 
-            const unzipped = (): IProposalPreview => {
+            const unzipped = (): OFFCHAIN.IPreviewProposal2 => {
                 const link = this.get().contentLink()
                 const s = cachedSocieties.findByID(this.get().sid())
                 return {
@@ -116,7 +115,7 @@ export class ProposalModel extends Model {
                 }
             }
 
-            const zipped = (): IPreview => BuildProposalPreviewString(unzipped())
+            const zipped = () => BuildProposalPreviewString(unzipped())
             
             return { unzipped, zipped }
         }
@@ -128,11 +127,12 @@ export class ProposalModel extends Model {
             title: (): string => this.state.title,
             index: (): number => this.state.index,
             content: (): string => this.state.content,
+            contentFormated: (): string[] => this.state.content.split('~~~_~~~_~~~_~~~'),
             author: (): AliasModel => this.state.author,
             pubKH: (): Inv.PubKH => Inv.PubKH.fromHex(this.state.public_key_hashed),
             createdAt: (): Date => this.state.created_at,
-            contentLink: (): IKindLinkUnRaw => this._onChainData == null ? undefined : this._onChainData.link,
-            vote: (): IVoteSummary => this._onChainData == null ? undefined : this._onChainData.vote,
+            contentLink: () => this._onChainData == null ? undefined : this._onChainData.link,
+            vote: () => this._onChainData == null ? undefined : this._onChainData.vote,
         }
     }
 
@@ -144,12 +144,18 @@ export class ProposalModel extends Model {
         }, true)
     }
 
-    renderViewJSON = async (society: SocietyModel | null, headerSig: IHeaderSignature | void) => {
+    renderViewJSON = async (society: SocietyModel | null, headerSig: ONCHAIN.IHeaderSignature | void): Promise<OFFCHAIN.IProposal> => {
         society && await this.pullOnChainData(society, headerSig)
         this.prepareJSONRendering()
         return {
-            ...this.to().filterGroup('view').plain(), 
-            content_link: this.state.content_link,
+            sid: this.get().sid(),
+            index: this.get().index(),
+            created_at: this.get().createdAt(),
+            title: this.get().title(),
+            content: this.get().contentFormated(),
+            author: this.get().author().to().filterGroup('author').plain(),
+            public_key_hashed: this.get().pubKH().hex(),
+            content_link: this.get().contentLink(),
             vote: this.get().vote(),
             pubkh_origin: this.getOnChainData().pubkh_origin,
             user_vote: this.getOnChainData().user_vote
@@ -164,7 +170,7 @@ export class ProposalModel extends Model {
 
 export class ProposalCollection extends Collection {
 
-    static fetchOnChainData = async (society: SocietyModel, pubKHList: string, headerSig: IHeaderSignature | void): Promise<IContentLink[] | string> => {
+    static fetchOnChainData = async (society: SocietyModel, pubKHList: string, headerSig: ONCHAIN.IHeaderSignature | void) => {
         try {
             const response = await axios.get(society.get().currencyRouteAPI() + '/proposals', {
                 headers: Object.assign({ list: pubKHList }, headerSig || {}),
@@ -172,7 +178,7 @@ export class ProposalCollection extends Collection {
                     return status >= 200 && status <= 500
                 }
             })
-            return response.status == 200 ? response.data as IContentLink[] : response.data as string
+            return response.status == 200 ? response.data as ONCHAIN.IProposalLink[] : response.data as string
         } catch (e){
             throw new Error(e)
         }
@@ -189,14 +195,14 @@ export class ProposalCollection extends Collection {
 
     pullLastsBySID = async (sid: number, offset: number) => await this.copy().sql().pull().where({sid}).orderBy('index', 'desc').offset(offset).limit(5).run() as ProposalCollection
 
-    renderPreviewJSON = async (society: SocietyModel, headerSig: IHeaderSignature | void) => {
+    renderPreviewJSON = async (society: SocietyModel, headerSig: ONCHAIN.IHeaderSignature | void) => {
         const p = await Promise.all([
             embed.pullBySidsAndIndexes(this.local().map((p: ProposalModel) => p.get().sid()), this.local().map((p: ProposalModel) => p.get().index())),
             society ? await this.pullOnChainData(society, headerSig) : null
         ])
         const listEmbeds = p[0]
 
-        return this.local().map((p: ProposalModel) => {
+        return this.local().map((p: ProposalModel): OFFCHAIN.IPreviewProposal1 => {
             const { user_vote, vote } = p.getOnChainData()
             const embed = listEmbeds.local().find({ index: p.get().index() }) as EmbedModel
             if (!embed)
@@ -205,17 +211,17 @@ export class ProposalCollection extends Collection {
                 preview_code: embed.get().content(),
                 user_vote,
                 vote,
-            } as IPreviewProposal
-        })
+            }
+        }) as OFFCHAIN.IPreviewProposal1[]
     }
 
-    pullOnChainData = async (society: SocietyModel, headerSig: IHeaderSignature | void) => {
+    pullOnChainData = async (society: SocietyModel, headerSig: ONCHAIN.IHeaderSignature | void) => {
         try {
             const list = this.local().map((p: ProposalModel) => p.get().pubKH().hex()).join(',')
             const res = await ProposalCollection.fetchOnChainData(society, list, headerSig)
             if (typeof res == 'string')
                 throw new Error(res)
-            res.forEach((link: IContentLink, index: number) => {
+            res.forEach((link, index) => {
                 (this.local().nodeAt(index) as ProposalModel).setOnChainData(link)
             })
         } catch (e){

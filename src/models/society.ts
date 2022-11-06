@@ -1,11 +1,10 @@
-import _ from 'lodash'
+import _, { startCase } from 'lodash'
 import { Joi, Collection, Model } from 'elzeard'
 import axios from 'axios'
-import { proposal } from './'
-import { ISocietyStats  } from 'community-coin-types'
+import { proposal, alias } from './'
+import { ONCHAIN, OFFCHAIN  } from 'community-coin-types'
 import {  ILocalSocietyStats } from '../static/interfaces'
 import { Inv } from 'wallet-util'
-
 
 export class SocietyModel extends Model {
 
@@ -56,22 +55,29 @@ export class SocietyModel extends Model {
                     }
                 })
                 if (res.status == 200){
-                    let stats = res.data as ISocietyStats
+                    let stats = res.data as ONCHAIN.ISocietyStats
                     const p = await proposal.fetchByPubKH(this.get().ID(), Inv.PubKH.fromHex(stats.constitution.proposal.pubkh))
-                    const renderedStats = _.cloneDeep(stats as any) as ILocalSocietyStats
-                    if (p){
-                        await p.pullOnChainData(this)
-                        renderedStats.constitution.proposal = p
-                    } else 
-                        renderedStats.constitution.proposal = null
-                        
-                    const o = {
-                        constitution: renderedStats.constitution,
-                        costs: renderedStats.costs
+                    const aliases = await alias.pullByAddresses(stats.most_active_addresses)
+                    const ret: ILocalSocietyStats = {
+                        constitution: {
+                            constitution: stats.constitution.constitution,
+                            proposal: p ? await p.renderViewJSON(this) : null
+                        },
+                        costs: stats.costs,
+                        stats: {
+                            version: stats.version,
+                            last_height: stats.last_height,
+                            total_contributor: stats.total_contributor,
+                            total_proposal: stats.total_proposal,
+                            active_addresses: stats.active_addresses,
+                            most_active_addresses: aliases.local().to().filterGroup('author').plain(),
+                            circulating_supply: stats.circulating_supply,
+                            circulating_vp_supply: stats.circulating_vp_supply,
+                            last_proposal_cost_change: stats.last_proposal_cost_change,
+                            last_thread_cost_change: stats.last_thread_cost_change,
+                        }
                     }
-                    delete renderedStats.constitution
-                    delete renderedStats.costs
-                    this.__setStats(Object.assign({}, this.to().plain(), {stats: renderedStats}, o))
+                    this.__setStats(ret)
                 }
             }
             return this.get().stats()
@@ -82,7 +88,7 @@ export class SocietyModel extends Model {
 
     get = () => {
         return {
-            stats: (): ILocalSocietyStats => this._stats,
+            stats: (): ILocalSocietyStats | null => this._stats,
             ID: (): number => this.state.id,
             name: (): string => this.state.name,
             pathName: (): string => this.state.path_name,

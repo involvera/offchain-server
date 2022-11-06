@@ -1,6 +1,5 @@
 import { Joi, Collection, Model } from 'elzeard'
-import {  IHeaderSignature, IKindLinkUnRaw, IThreadReward } from 'community-coin-types'
-import { IPreview, IProposalPreview, IThreadPreview } from 'involvera-content-embedding'
+import {  OFFCHAIN, ONCHAIN } from 'community-coin-types'
 import { BuildThreadPreviewString } from '../utils/embeds' 
 import { AliasModel } from './alias'
 import _ from 'lodash'
@@ -15,7 +14,7 @@ import { Inv } from 'wallet-util'
 
 export class ThreadModel extends Model {
 
-    static FetchRewards = async (pubkhs: string, society: SocietyModel, headerSig: IHeaderSignature | void) => {
+    static FetchRewards = async (pubkhs: string, society: SocietyModel, headerSig: ONCHAIN.IHeaderSignature | void) => {
         try {
             const res = await axios.get(society.get().currencyRouteAPI() + '/threads/rewards',{
                 headers: Object.assign({ list: pubkhs }, headerSig || {}),
@@ -24,23 +23,29 @@ export class ThreadModel extends Model {
                 }
             })
             if (res.status == 200)
-                return res.data as IThreadReward[]
+                return res.data as ONCHAIN.IThreadReward[]
         } catch(e){
             throw new Error(e)
         }
     }
 
     static RenderTargetAndSubTarget = async (target: ThreadModel | ProposalModel | null) => {
-        let json: any = {}
+        let json: OFFCHAIN.IThreadTargetGroup = null
         if (target){
-            target instanceof ThreadModel && target.prepareJSONRendering()
-            json.target = target instanceof ThreadModel ? target.to().filterGroup('view').plain() : target.get().preview().unzipped()
             if (target instanceof ThreadModel){
+                target.prepareJSONRendering()
+                json = target.to().filterGroup('view').plain()
                 const target2 = await target.get().target()
                 if (target2) {
-                    target2 instanceof ThreadModel && target2.prepareJSONRendering()
-                    json.target.target = target2 instanceof ThreadModel ? target2.to().filterGroup('view').plain() : target2.get().preview().unzipped()
+                    if (target2 instanceof ThreadModel){
+                        target2.prepareJSONRendering();
+                        json.target = target2.to().filterGroup('view').plain() 
+                    } else if (target2 instanceof ProposalModel){
+                        json.target = target2.get().preview().unzipped()
+                    }                
                 }
+            } else {
+                json.target = target.get().preview().unzipped()
             }
         }
         return json
@@ -79,14 +84,14 @@ export class ThreadModel extends Model {
         }
     }
 
-    getRewards = async (society: SocietyModel, headerSig: IHeaderSignature | void) => ThreadModel.FetchRewards(this.get().pubKH().hex(), society, headerSig)
+    getRewards = async (society: SocietyModel, headerSig: ONCHAIN.IHeaderSignature | void) => ThreadModel.FetchRewards(this.get().pubKH().hex(), society, headerSig)
 
     get = () => {
 
         const preview = (target: ProposalModel | ThreadModel | null) => {
 
-            const unzipped = (): IThreadPreview => {
-                let t: IThreadPreview | IProposalPreview | null = null
+            const unzipped = (): OFFCHAIN.IPreviewThread2 => {
+                let t: OFFCHAIN.IPreviewThread2 | OFFCHAIN.IPreviewProposal2 | null = null
                 if (target instanceof ProposalModel){
                     t = target.get().preview().unzipped()
                 } else if (target instanceof ThreadModel){
@@ -106,7 +111,7 @@ export class ThreadModel extends Model {
                 }
             }
 
-            const zipped = (): IPreview => BuildThreadPreviewString(unzipped())
+            const zipped = () => BuildThreadPreviewString(unzipped())
             
             return { unzipped, zipped }
         }
@@ -120,7 +125,7 @@ export class ThreadModel extends Model {
             id: (): number => this.state.id,
             sid: (): number => this.state.sid,
             createdAt: (): Date => this.state.created_at,
-            contentLink: (): IKindLinkUnRaw => {
+            contentLink: (): ONCHAIN.IKindLinkUnRaw => {
                 if (typeof this.state.content_link == 'string')
                     return JSON.parse(this.state.content_link)
                 return this.state.content_link
@@ -148,11 +153,11 @@ export class ThreadModel extends Model {
 
     prepareJSONRendering = () => this.setState({ content_link: this.get().contentLink() }, true)
 
-    renderReplyJSON = async (society: SocietyModel, headerSig: IHeaderSignature | void)  => {
+    renderReplyJSON = async (society: SocietyModel, headerSig: ONCHAIN.IHeaderSignature | void)  => {
         return this.renderViewJSON(society, headerSig, true)
     }
 
-    renderViewJSON = async (society: SocietyModel, headerSig: IHeaderSignature | void, isReply: boolean | void)  => {
+    renderViewJSON = async (society: SocietyModel, headerSig: ONCHAIN.IHeaderSignature | void, isReply: boolean | void)  => {
         const p = await Promise.all([
             this.getRewards(society, headerSig),
             this.get().countReply(),
@@ -160,16 +165,24 @@ export class ThreadModel extends Model {
         ])
         this.prepareJSONRendering()
         
-        let target: any ={}
+        let target: OFFCHAIN.IThreadTargetGroup | null = null
         if (!isReply)
             target = await ThreadModel.RenderTargetAndSubTarget(p[2])
 
-        return {
-            ...this.to().filterGroup('view').plain(),
-            ...target,
+        const ret: OFFCHAIN.IThreadViewGroup = {
             reward: p[0][0],
             reply_count: p[1],
+            target,
+            sid: this.get().sid(),
+            created_at: this.get().createdAt(),
+            title: this.get().title(),
+            content: this.get().content(),
+            author: this.get().author().to().filterGroup('author').plain(),
+            public_key_hashed: this.get().pubKH().hex(),
+            content_link: this.get().contentLink(),
         }
+
+        return ret
     }
 }
 
@@ -181,7 +194,7 @@ export class ThreadCollection extends Collection {
 
     get = () => {
 
-        const rewardList = (society: SocietyModel, headerSig: IHeaderSignature | void) => {
+        const rewardList = (society: SocietyModel, headerSig: ONCHAIN.IHeaderSignature | void) => {
             const listPKHStr = this.local().map((t: ThreadModel) => t.get().pubKH().hex()).join(',')
             return ThreadModel.FetchRewards(listPKHStr, society, headerSig)
         }
@@ -219,7 +232,7 @@ export class ThreadCollection extends Collection {
     }
 
     //thread full format without targets.
-    renderThreadRepliesJSON = async (society: SocietyModel, headerSig: IHeaderSignature | void) => {
+    renderThreadRepliesJSON = async (society: SocietyModel, headerSig: ONCHAIN.IHeaderSignature | void) => {
         const p = await Promise.all([
             this.get().rewardList(society, headerSig),
             this.get().countReplyList(society),
@@ -232,15 +245,24 @@ export class ThreadCollection extends Collection {
             if (!reward)
                 throw new Error("Unable to fetch thread's rewards")
             const replyCount = _.find(p[1], {target_pkh: t.get().pubKH().hex()})            
-            return {
-                ...json, 
+
+            const ret: OFFCHAIN.IThreadViewGroup = {
                 reward,
-                reply_count: replyCount ? replyCount.count : 0
+                reply_count: replyCount ? replyCount.count : 0,
+                sid: t.get().sid(),
+                created_at: t.get().createdAt(),
+                title: t.get().title(),
+                content: t.get().content(),
+                author: t.get().author().to().filterGroup('author').plain(),
+                public_key_hashed: t.get().pubKH().hex(),
+                content_link: t.get().contentLink(),
             }
-        }) 
+            return ret
+
+        }) as OFFCHAIN.IThreadTargetGroup[]
     }
 
-    renderPreviewList = async (society: SocietyModel, headerSig: IHeaderSignature | void) => {
+    renderPreviewList = async (society: SocietyModel, headerSig: ONCHAIN.IHeaderSignature | void) => {
         const p = await Promise.all([
             this.get().rewardList(society, headerSig),
             embed.pullBySidsAndPKHs(this.local().map((t: ThreadModel) => t.get().sid()), this.local().map((t: ThreadModel) => t.get().pubKH().hex())),
@@ -263,13 +285,14 @@ export class ThreadCollection extends Collection {
 
             const replyCount = _.find(listCountReplies, { target_pkh: t.get().pubKH().hex() })
 
-            return {
-                reward, 
+            const ret: OFFCHAIN.IPreviewThread1 = {
+                reward,
                 preview_code: embed.get().content(), 
                 content_link: t.get().contentLink(), 
                 reply_count: replyCount ? replyCount.count : 0
-            }
-        })
+            } 
+            return ret
+        }) as OFFCHAIN.IPreviewThread1[]
     }
 }
 

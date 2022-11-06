@@ -2,10 +2,9 @@ import express from 'express'
 import Knex from 'knex'
 import morgan from 'morgan'
 import { config } from 'elzeard'
-import { cachedSocieties, embed, EmbedCollection, EmbedModel, thread, proposal } from './models'
+import { cachedSocieties } from './models'
 import cors from 'cors'
 import { loadServerConfiguration, ServerConfiguration} from './static/config'
-import { IAlias, PREVIEW_SEPATOR, StringToParsedPreview } from 'involvera-content-embedding'
 
 export const initCachedData = async () => {
   await cachedSocieties.pullAll(); 

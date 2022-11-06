@@ -1,7 +1,7 @@
 import express from 'express'
 import axios from 'axios'
 import { thread, SocietyModel, embed, ThreadModel } from '../../models'
-import { IContentLink } from 'community-coin-types'
+import { ONCHAIN } from 'community-coin-types'
 import { Inv } from 'wallet-util'
 
 export const GetAndAssignLinkToThread = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -16,7 +16,7 @@ export const GetAndAssignLinkToThread = async (req: express.Request, res: expres
             }
         })
         if (response.status == 200){
-            const json = response.data as IContentLink
+            const json = response.data as ONCHAIN.IContentLink
             req.body = Object.assign(req.body, {
                 author: Inv.PubKH.fromHex(json.pubkh_origin).toAddress().get(),
                 public_key_hashed,

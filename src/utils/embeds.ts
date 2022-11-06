@@ -1,7 +1,13 @@
 import { 
     PREVIEW_SEPATOR, REGEX_SEPARATOR, 
-    IPreview, IThreadPreview, IProposalPreview 
 } from 'involvera-content-embedding'
+import { OFFCHAIN, ONCHAIN } from 'community-coin-types'
+import { TPubKHContent  } from 'wallet-script/dist/src/content-code'
+
+export interface IPreview {
+    type: TPubKHContent
+    embed_code: string
+}
 
 const stripTags = (input: string, allowed: string) => {
     allowed = (((allowed || "") + "").toLowerCase().match(/<[a-z][a-z0-9]*>/g) || []).join('') // making sure the allowed arg is a string containing only tags in lowercase (<a><b><c>)
@@ -12,7 +18,7 @@ const stripTags = (input: string, allowed: string) => {
     })
 }
 
-export const BuildThreadPreviewString = (preview: IThreadPreview): IPreview => {
+export const BuildThreadPreviewString = (preview: OFFCHAIN.IPreviewThread2): IPreview => {
     const { pkh, author, created_at, target, sid, spname } = preview
 
     const title = (preview.title || '').replace(REGEX_SEPARATOR, '---')
@@ -28,7 +34,7 @@ export const BuildThreadPreviewString = (preview: IThreadPreview): IPreview => {
     return { type: 'THREAD', embed_code }
 }
 
-export const BuildProposalPreviewString = (preview: IProposalPreview): IPreview => {
+export const BuildProposalPreviewString = (preview: OFFCHAIN.IPreviewProposal2): IPreview => {
     const { index, layer, created_at, vote, sid, author, spname} = preview  
 
     const title = (preview.title || '').replace(REGEX_SEPARATOR, '---')

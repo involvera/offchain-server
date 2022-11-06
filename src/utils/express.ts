@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import Express from 'express'
-import { IHeaderSignature } from 'community-coin-types'
+import { ONCHAIN } from 'community-coin-types'
 
 export const bodyAssignator = (callback: (request: Express.Request) => any) => {
     return async (req: Express.Request, res: Express.Response, next: Express.NextFunction) => { 
@@ -41,9 +41,9 @@ export const ArrayObjToDoubleArray = (a: any[], keys: string[]) => {
     return ret
 }
 
-export const getHeaderSignature = (req: Express.Request): IHeaderSignature | void => {
+export const getHeaderSignature = (req: Express.Request): ONCHAIN.IHeaderSignature | void => {
     const { signature, pubkey } = req.headers
-    let headerSig: IHeaderSignature = undefined
+    let headerSig: ONCHAIN.IHeaderSignature = undefined
     if (signature && pubkey){
         headerSig = {signature: signature as string, pubkey: pubkey as string}
     }
