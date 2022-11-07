@@ -30,9 +30,9 @@ export class ThreadModel extends Model {
     }
 
     static RenderTargetAndSubTarget = async (target: ThreadModel | ProposalModel | null) => {
-        let json: OFFCHAIN.IThreadTargetGroup = null
         if (target){
             if (target instanceof ThreadModel){
+                let json: OFFCHAIN.IThreadTargetGroup  = null
                 target.prepareJSONRendering()
                 json = target.to().filterGroup('view').plain()
                 const target2 = await target.get().target()
@@ -44,11 +44,11 @@ export class ThreadModel extends Model {
                         json.target = target2.get().preview().unzipped()
                     }                
                 }
+                return json
             } else {
-                json.target = target.get().preview().unzipped()
+                return target.get().preview().unzipped()
             }
         }
-        return json
     }
 
     static schema = Joi.object({
@@ -119,6 +119,7 @@ export class ThreadModel extends Model {
         const target = async (): Promise<ThreadModel | ProposalModel | null> => {
             const link = this.get().contentLink()
             const script = Script.fromBase64(link.output.script)
+
             if (script.is().RethreadOnlyScript()){
                 const contentPKH = script.parse().targetPKHFromContentScript()
                 const p = await proposal.fetchByPubKH(this.get().sid(), contentPKH)
@@ -148,7 +149,7 @@ export class ThreadModel extends Model {
                 return this.state.content_link
             },
             targetPKH: () => this.state.target_pkh ? Inv.PubKH.fromHex(this.state.target_pkh) : null,
-            target: target,
+            target,
             countReply: async () => this.sql().count().where({sid: this.get().sid(), target_pkh: this.get().pubKH().hex()})
         }
     }
@@ -167,7 +168,7 @@ export class ThreadModel extends Model {
         ])
         this.prepareJSONRendering()
         
-        let target: OFFCHAIN.IThreadTargetGroup | null = null
+        let target: OFFCHAIN.IThreadTargetGroup | OFFCHAIN.IPreviewProposal2 | null = null
         if (!isReply)
             target = await ThreadModel.RenderTargetAndSubTarget(p[2])
 

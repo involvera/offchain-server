@@ -23,7 +23,7 @@ export default (server: express.Express) => {
 
         try {
             res.status(201).send(await buildAllPP(tmpFP))
-        } catch (e: any){
+        } catch (e){
             res.status(500).json({error: e.toString()})
         } finally {
             fs.rmSync(tmpFP)

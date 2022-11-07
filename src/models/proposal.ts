@@ -126,13 +126,13 @@ export class ProposalModel extends Model {
             sid: (): number => this.state.sid,
             title: (): string => this.state.title,
             index: (): number => this.state.index,
-            content: (): string => this.state.content,
-            contentFormated: (): string[] => this.state.content.split('~~~_~~~_~~~_~~~'),
+            content: (): string | string[] => this.state.content,
             author: (): AliasModel => this.state.author,
             pubKH: (): Inv.PubKH => Inv.PubKH.fromHex(this.state.public_key_hashed),
             createdAt: (): Date => this.state.created_at,
             contentLink: () => this._onChainData == null ? undefined : this._onChainData.link,
             vote: () => this._onChainData == null ? undefined : this._onChainData.vote,
+            context: (): string => this.state.context
         }
     }
 
@@ -152,7 +152,8 @@ export class ProposalModel extends Model {
             index: this.get().index(),
             created_at: this.get().createdAt(),
             title: this.get().title(),
-            content: this.get().contentFormated(),
+            content: this.get().content() as string[],
+            context: this.get().context(),
             author: this.get().author().to().filterGroup('author').plain(),
             public_key_hashed: this.get().pubKH().hex(),
             content_link: this.get().contentLink(),
